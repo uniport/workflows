@@ -2,36 +2,37 @@
   "name": "@uniport/workflows",
   "version": "1.0.0",
   "description": "Reusable workflows and composite actions to avoid duplicating the content of workflows",
-  "main": "index.js",
-  "scripts": {
-    "lint": "run-p -l lint:*",
-    "lint:prettier": "prettier \"**/*.{md,yml,yaml}\" --check",
-    "format": "run-p -l format:*",
-    "format:prettier": "prettier \"**/*.{md,yml,yaml}\" --write",
-    "prepare": "husky",
-    "test": "exit 1"
-  },
+  "license": "UNLICENSED",
+  "author": "Peter Siska <psiska@inventage.com>",
+  "homepage": "https://github.com/uniport/workflows#readme",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/uniport/workflows.git"
   },
-  "keywords": [
-    "github",
-    "actions",
-    "workflows"
-  ],
-  "author": "Peter Siska <psiska@inventage.com>",
-  "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/uniport/workflows/issues"
   },
-  "homepage": "https://github.com/uniport/workflows#readme",
+  "main": "index.js",
+  "scripts": {
+    "format": "run-p -l format:*",
+    "format:prettier": "prettier \"**/*.{md,yml,yaml}\" --write",
+    "format:prettier-package-json": "npx prettier-package-json --write package.json",
+    "lint": "run-p -l lint:*",
+    "lint:prettier": "prettier \"**/*.{md,yml,yaml}\" --check",
+    "prepare": "husky",
+    "test": "exit 1"
+  },
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
     "npm-run-all2": "^7.0.2",
     "prettier": "^3.5.3"
   },
+  "keywords": [
+    "actions",
+    "github",
+    "workflows"
+  ],
   "lint-staged": {
     "*.{md,yml,yaml}": "prettier --write"
   }
