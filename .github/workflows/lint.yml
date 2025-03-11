@@ -12,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: ./.github/actions/setup-node-and-dependencies
+      - uses: uniport/workflows/.github/actions/setup-node-and-dependencies@main
 
       - name: Linters
         run: npm run lint
