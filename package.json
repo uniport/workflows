@@ -1,0 +1,30 @@
+{
+  "name": "@uniport/workflows",
+  "version": "1.0.0",
+  "description": "Reusable workflows and composite actions to avoid duplicating the content of workflows",
+  "main": "index.js",
+  "scripts": {
+    "format": "run-p -l format:*",
+    "format:prettier": "prettier \"**/*.{md,yml,yaml}\" --write",
+    "test": "exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/uniport/workflows.git"
+  },
+  "keywords": [
+    "github",
+    "actions",
+    "workflows"
+  ],
+  "author": "Peter Siska <psiska@inventage.com>",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/uniport/workflows/issues"
+  },
+  "homepage": "https://github.com/uniport/workflows#readme",
+  "devDependencies": {
+    "npm-run-all2": "^7.0.2",
+    "prettier": "^3.5.3"
+  }
+}

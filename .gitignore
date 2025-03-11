@@ -1,0 +1,17 @@
+# Ignore all IntelliJ stuff and include the important things
+# @see https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+/.idea/*
+!/.idea/codeStyles/
+!/.idea/jsLinters/
+!/.idea/runConfigurations/
+!/.idea/checkstyle-idea.xml
+!/.idea/codeStyleSettings.xml
+!/.idea/compiler.xml
+!/.idea/dataSources.xml
+!/.idea/eclipseCodeFormatter.xml
+!/.idea/encodings.xml
+!/.idea/prettier.xml
+!/.idea/sqldialects.xml
+*.iml
+
+node_modules/
