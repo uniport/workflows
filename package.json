@@ -8,6 +8,7 @@
     "lint:prettier": "prettier \"**/*.{md,yml,yaml}\" --check",
     "format": "run-p -l format:*",
     "format:prettier": "prettier \"**/*.{md,yml,yaml}\" --write",
+    "prepare": "husky",
     "test": "exit 1"
   },
   "repository": {
@@ -26,7 +27,12 @@
   },
   "homepage": "https://github.com/uniport/workflows#readme",
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.3",
     "npm-run-all2": "^7.0.2",
     "prettier": "^3.5.3"
+  },
+  "lint-staged": {
+    "*.{md,yml,yaml}": "prettier --write"
   }
 }
