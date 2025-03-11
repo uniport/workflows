@@ -1,0 +1,36 @@
+name: 'Setup Node.js and Dependencies'
+description: 'Sets up Node.js and installs npm dependencies'
+inputs:
+  node-version:
+    description: 'Node.js version'
+    required: true
+    default: '22'
+  without-dependencies:
+    description: 'Whether to skip installing npm dependencies'
+    required: false
+    default: '0'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    # @see https://www.voorhoede.nl/en/blog/super-fast-npm-install-on-github-actions/
+    - uses: actions/cache@v4
+      id: cache-node-modules
+      if: ${{ inputs.without-dependencies == '0' }}
+      with:
+        path: ./node_modules
+        key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
+
+    - name: Install packages
+      shell: bash
+      if: ${{ inputs.without-dependencies == '0' && steps.cache-node-modules.outputs.cache-hit != 'true' }}
+      env:
+        HUSKY_SKIP_HOOKS: 1
+      run: npm ci
+
+

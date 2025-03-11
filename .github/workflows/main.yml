@@ -1,0 +1,13 @@
+name: Main
+run-name: 'Main workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml

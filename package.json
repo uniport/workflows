@@ -4,6 +4,8 @@
   "description": "Reusable workflows and composite actions to avoid duplicating the content of workflows",
   "main": "index.js",
   "scripts": {
+    "lint": "run-p -l lint:*",
+    "lint:prettier": "prettier \"**/*.{md,yml,yaml}\" --check",
     "format": "run-p -l format:*",
     "format:prettier": "prettier \"**/*.{md,yml,yaml}\" --write",
     "test": "exit 1"
