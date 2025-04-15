@@ -10,4 +10,4 @@ on:
 jobs:
   lint:
     name: Lint
-    uses: ./.github/workflows/lint.yml
+    uses: ./.github/workflows/npm-npm-lint.yml
