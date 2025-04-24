@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: .github/actions/send-rocket-chat-message
+      - uses: ./.github/actions/send-rocket-chat-message
         with:
           webhook_url: ${{ secrets.ROCKETCHAT_WEBHOOK_URL }}
           channel: ${{ inputs.channel }}
