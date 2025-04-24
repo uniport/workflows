@@ -15,10 +15,10 @@
   "main": "index.js",
   "scripts": {
     "format": "run-p -l format:*",
-    "format:prettier": "prettier \"**/*.{md,yml,yaml}\" --write",
+    "format:prettier": "prettier \"**/*.{js,cjs,mjs,md,yml,yaml}\" --write",
     "format:prettier-package-json": "npx prettier-package-json --write package.json",
     "lint": "run-p -l lint:*",
-    "lint:prettier": "prettier \"**/*.{md,yml,yaml}\" --check",
+    "lint:prettier": "prettier \"**/*.{js,cjs,mjs,md,yml,yaml}\" --check",
     "prepare": "husky",
     "test": "exit 1"
   },

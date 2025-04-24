@@ -1,0 +1,21 @@
+name: Send Rocket.Chat Message
+description: 'Sends a Rocket.Chat Message via Webhook'
+inputs:
+  webhook_url:
+    description: 'The Rocket.Chat webhook URL'
+    required: true
+  channel:
+    description: 'The channel to send the message to (optional)'
+    required: false
+  message:
+    description: 'The message to send'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    # No need to install Node as it is available on all GitHub runners…
+    - name: Send Rocket.Chat message
+      shell: bash
+      run: |
+        node ./.github/scripts/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} '${{ inputs.message }}'
