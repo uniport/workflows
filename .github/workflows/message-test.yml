@@ -1,0 +1,27 @@
+name: Message Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'The Rocket.Chat channel where the message will be sent'
+        type: string
+        required: true
+
+jobs:
+  message:
+    runs-on: ubuntu-latest
+    env:
+      RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: .github/actions/send-rocket-chat-message
+        with:
+          webhook_url: ${{ secrets.ROCKETCHAT_WEBHOOK_URL }}
+          channel: ${{ inputs.channel }}
+          message: |
+            This is just a test message from a GitHub action.
+
+            Check the [build logs](${{ env.RUN_URL }}) for details.
