@@ -16,6 +16,9 @@ jobs:
       #      - name: Setup Java
       #        uses: ./.github/actions/setup-java
 
+      - run: |
+          echo ${{ secrets.NEXUS3_PW }}
+
       - name: Setup Helm
         uses: ./.github/actions/add-helm-repositories
         with:
