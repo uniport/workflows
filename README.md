@@ -44,3 +44,15 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 | Each step is logged in real-time                                                             | Logged as one step even if it contains multiple steps                                                                        |
 | Can connect a maximum of four levels of workflows                                            | Can be nested to have up to 10 composite actions in one workflow                                                             |
 | Can use secrets                                                                              | Cannot use secrets                                                                                                           |
+
+## Development
+
+### Local Testing
+
+Some workflows can be run locally using [act](https://github.com/nektos/act).
+
+Example:
+
+    act -W '.github/workflows/test-validate-version.yml' --input version=9.5.0-202504281107-91-fc989f5 --container-architecture linux/amd64
+
+    act -j build -W '.github/workflows/test-maven.yml' --secret NEXUS3_PW=test --var NEXUS3_USER=test --container-architecture linux/amd64
