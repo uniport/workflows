@@ -35,7 +35,7 @@ runs:
       # @see https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
       run: |
         # Read version from pom.xml
-        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        VERSION=$(mvn -B --offline help:evaluate -Dexpression=project.version -q -DforceStdout)
 
         # Validate version
         if [[ -z "$VERSION" ]]; then
@@ -62,7 +62,7 @@ runs:
         RC_VERSION="${SEMVER}-${VERSION_SUFFIX}"
 
         # Read other attributes from pom.xml
-        GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+        GROUP_ID=$(mvn -B --offline help:evaluate -Dexpression=project.groupId -q -DforceStdout)
 
         # Save outputs
         echo "REACTOR_VERSION=$VERSION" >> $GITHUB_OUTPUT
