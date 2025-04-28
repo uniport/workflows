@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Validate version format
-        run: uniport/workflows/.github/actions/validate-version@main
+        uses: ./.github/actions/validate-version
         with:
           version: ${{ inputs.version }}
 
