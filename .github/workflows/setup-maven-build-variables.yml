@@ -44,4 +44,4 @@ jobs:
 
       - name: Setup Variables
         id: vars
-        uses: ../actions/setup-maven-build-variables
+        uses: ./.github/actions/setup-maven-build-variables
