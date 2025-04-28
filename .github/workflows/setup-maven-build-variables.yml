@@ -39,6 +39,9 @@ jobs:
       FULL_SHA: ${{ steps.vars.outputs.FULL_SHA }}
       GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup Variables
         id: vars
         uses: ./.github/actions/setup-maven-build-variables
