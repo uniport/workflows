@@ -29,5 +29,4 @@ runs:
         if [[ -n "${{ inputs.settings-file }}" ]]; then
           mvn_command="$mvn_command --settings ${{ inputs.settings-file }}"
         fi
-        echo "Running Maven command: $mvn_command"
         eval "$mvn_command"
