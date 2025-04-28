@@ -35,4 +35,5 @@ runs:
           echo "Repo URL: $repo_url"
           echo "Username: ${{ inputs.username }}"
           echo "PW: ${{ inputs.password }}"
+          helm repo add "$repo_name" "$repo_url" --username "${{ inputs.username }}" --password "${{ inputs.password }}"
         done
