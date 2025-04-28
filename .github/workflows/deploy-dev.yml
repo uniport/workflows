@@ -50,6 +50,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: uniport/workflows
+          ref: main
           path: shared
 
       - name: Validate version format
