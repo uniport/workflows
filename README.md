@@ -22,6 +22,8 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 
 - [NPM Lint](./.github/workflows/npm-lint.yml) - Runs NPM the `lint` command defined in `package.json` to ensure code quality and adherence to coding standards.
 - [Setup Maven Build Variables](./.github/workflows/setup-maven-build-variables.yml) - Wrapper around the [`setup-maven-build-variables` action](./.github/actions/setup-maven-build-variables) that maps all outputs to the workflow to it can also be used as a reusable workflow as opposed to just a composite action.
+- [Deploy DEV](./.github/workflows/deploy-dev.yml) - Workflow for deploying a component version to the DEV environment
+- [Update Archetype](./.github/workflows/update-archetype.yml) - Workflow for updating a component version in the Uniport Archetype
 
 ## Workflows vs. Actions
 
