@@ -1,16 +1,30 @@
 name: Setup Maven Build Variables
 
 on:
+  workflow_dispatch:
   workflow_call:
     outputs:
-      REACTOR_VERSION: ${{ jobs.vars.outputs.REACTOR_VERSION }}
-      SEMVER: ${{ jobs.vars.outputs.SEMVER }}
-      VERSION_SUFFIX: ${{ jobs.vars.outputs.VERSION_SUFFIX }}
-      RC_VERSION: ${{ jobs.vars.outputs.RC_VERSION }}
-      SHORT_SHA: ${{ jobs.vars.outputs.SHORT_SHA }}
-      FULL_SHA: ${{ jobs.vars.outputs.FULL_SHA }}
-      GROUP_ID: ${{ jobs.vars.outputs.GROUP_ID }}
-  workflow_dispatch:
+      REACTOR_VERSION:
+        description: The full version from pom.xml (e.g., 1.0.0-SNAPSHOT)
+        value: ${{ jobs.vars.outputs.REACTOR_VERSION }}
+      SEMVER:
+        description: The version without -SNAPSHOT (e.g., 1.0.0)
+        value: ${{ jobs.vars.outputs.SEMVER }}
+      VERSION_SUFFIX:
+        description: A suffix combining build date, run number, and short SHA (e.g., 20250422123045-123-abcdefg)
+        value: ${{ jobs.vars.outputs.VERSION_SUFFIX }}
+      RC_VERSION:
+        description: The release candidate version (e.g., 1.0.0-20250422123045-123-abcdefg)
+        value: ${{ jobs.vars.outputs.RC_VERSION }}
+      SHORT_SHA:
+        description: The short Git SHA (first 7 characters)
+        value: ${{ jobs.vars.outputs.SHORT_SHA }}
+      FULL_SHA:
+        description: The full Git SHA
+        value: ${{ jobs.vars.outputs.FULL_SHA }}
+      GROUP_ID:
+        description: The groupId from pom.xml
+        value: ${{ jobs.vars.outputs.GROUP_ID }}
 
 jobs:
   setup:
