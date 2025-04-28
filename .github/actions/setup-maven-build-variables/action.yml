@@ -28,11 +28,11 @@ outputs:
 runs:
   using: composite
   steps:
-    - uses: ./.github/actions/setup-java
-
     - name: Setup variables
       shell: bash
       id: vars
+      # mvn already installed on the shared runners so we don't need to set it up
+      # @see https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
       run: |
         # Read version from pom.xml
         VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
