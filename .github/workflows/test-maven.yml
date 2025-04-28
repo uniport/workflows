@@ -15,10 +15,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Variables
-        id: vars
-        uses: ./.github/actions/setup-maven-build-variables
-
       - name: Setup Java
         uses: ./.github/actions/setup-java
 
@@ -27,6 +23,10 @@ jobs:
         with:
           username: ${{ vars.NEXUS3_USER }}
           password: ${{ secrets.NEXUS3_PW }}
+
+      - name: Setup Variables
+        id: vars
+        uses: ./.github/actions/setup-maven-build-variables
 
       - name: Set version
         run: |
