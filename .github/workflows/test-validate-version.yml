@@ -11,6 +11,7 @@ on:
 
 jobs:
   validate:
+    name: Validate Version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
