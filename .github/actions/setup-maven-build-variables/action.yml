@@ -76,8 +76,7 @@ runs:
     - name: Summary
       shell: bash
       run: |
-        echo "## Setup Maven Build Variables" >> $GITHUB_STEP_SUMMARY
-        echo "This action ran successfully on **$(date)**." >> $GITHUB_STEP_SUMMARY
+        echo "## Setup Maven Build Variables (Action)" >> $GITHUB_STEP_SUMMARY
         echo "### Outputs" >> $GITHUB_STEP_SUMMARY
         echo "- **REACTOR_VERSION**: \`${{ steps.vars.outputs.REACTOR_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **SEMVER**: \`${{ steps.vars.outputs.SEMVER }}\`" >> $GITHUB_STEP_SUMMARY
