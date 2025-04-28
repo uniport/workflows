@@ -82,7 +82,7 @@ jobs:
       - name: Configure deployment
         run: |
           cd deployment-repo
-          ./updateVersion.sh portal-gateway "${{ inputs.version }}"
+          ./updateVersion.sh "${{ inputs.component_name }}" "${{ inputs.version }}"
           git push origin ${{ inputs.branch }}
 
       - name: Summary
