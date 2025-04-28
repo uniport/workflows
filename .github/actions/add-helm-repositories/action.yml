@@ -30,7 +30,5 @@ runs:
         echo '${{ inputs.repositories }}' | jq -c '.[]' | while IFS= read -r repo_json; do
           repo_name=$(echo "$repo_json" | jq -r .name)
           repo_url=$(echo "$repo_json" | jq -r .url)
-          export HELM_PASSWORD="${{ inputs.password }}"
-          helm repo add "$repo_name" "$repo_url" --username "${{ inputs.username }}"
-          unset HELM_PASSWORD
+          helm repo add "$repo_name" "$repo_url" --username "${{ inputs.username }}" --password "${{ inputs.password }}"
         done
