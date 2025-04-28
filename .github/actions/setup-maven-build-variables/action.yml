@@ -5,7 +5,7 @@ author: Your Name or Organization
 outputs:
   REACTOR_VERSION:
     description: The full version from pom.xml (e.g., 1.0.0-SNAPSHOT)
-    value: ${{ steps.vars.outputs.REACTOR_VERSION }}
+    value: ${{ steps.maven.outputs.REACTOR_VERSION }}
   SEMVER:
     description: The version without -SNAPSHOT (e.g., 1.0.0)
     value: ${{ steps.vars.outputs.SEMVER }}
@@ -23,14 +23,14 @@ outputs:
     value: ${{ steps.vars.outputs.FULL_SHA }}
   GROUP_ID:
     description: The groupId from pom.xml
-    value: ${{ steps.vars.outputs.GROUP_ID }}
+    value: ${{ steps.maven.outputs.GROUP_ID }}
 
 runs:
   using: composite
   steps:
     - name: Setup maven variables
-      shell: bash
       id: maven
+      shell: bash
       run: |
         # Read version from pom.xml
         VERSION=$(mvn -B --offline help:evaluate -Dexpression=project.version -q -DforceStdout)
@@ -81,13 +81,11 @@ runs:
         RC_VERSION="${SEMVER}-${VERSION_SUFFIX}"
 
         # Save outputs
-        echo "REACTOR_VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "SEMVER=$SEMVER" >> $GITHUB_OUTPUT
         echo "VERSION_SUFFIX=$VERSION_SUFFIX" >> $GITHUB_OUTPUT
         echo "RC_VERSION=$RC_VERSION" >> $GITHUB_OUTPUT
         echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
         echo "FULL_SHA=$FULL_SHA" >> $GITHUB_OUTPUT
-        echo "GROUP_ID=$GROUP_ID" >> $GITHUB_OUTPUT
 
     - name: Summary
       shell: bash
