@@ -24,6 +24,7 @@ runs:
         cat << EOF >> '${{ inputs.auth-file }}'
         //$NEXUS_URL/repository/$NPM_REPOSITORY/:_authToken=$NPM_TOKEN
         EOF
+        cat '${{ inputs.auth-file }}'
       env:
         NPM_TOKEN: ${{ inputs.token }}
         NPM_REPOSITORY: ${{ inputs.repository }}
