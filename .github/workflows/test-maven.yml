@@ -13,6 +13,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: [setup]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -26,13 +27,9 @@ jobs:
           username: ${{ vars.NEXUS3_USER }}
           password: ${{ secrets.NEXUS3_PW }}
 
-      - name: Setup Variables
-        id: vars
-        uses: ./.github/actions/setup-maven-build-variables
-
       - name: Set version
         run: |
-          mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ steps.vars.outputs.RC_VERSION }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+          mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ needs.setup.outputs.RC_VERSION }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
 
       - name: Maven build
         run: |
