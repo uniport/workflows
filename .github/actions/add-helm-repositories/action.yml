@@ -32,4 +32,6 @@ runs:
           repo_url=$(echo "$repo_json" | jq -r .url)
           echo "Repo name: $repo_name"
           echo "Repo URL: $repo_url"
+          echo "Username: ${{ inputs.username }}"
+          echo "PW: ${{ inputs.password }}"
         done
