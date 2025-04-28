@@ -21,6 +21,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 > Reusable workflows available in this repository.
 
 - [NPM Lint](./.github/workflows/npm-lint.yml) - Runs NPM the `lint` command defined in `package.json` to ensure code quality and adherence to coding standards.
+- [Setup Maven Build Variables](./.github/workflows/setup-maven-build-variables.yml) - Wrapper around the [`setup-maven-build-variables` action](./.github/actions/setup-maven-build-variables) that maps all outputs to the workflow to it can also be used as a reusable workflow as opposed to just a composite action.
 
 ## Workflows vs. Actions
 

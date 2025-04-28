@@ -1,0 +1,30 @@
+name: Setup Maven Build Variables
+
+on:
+  workflow_call:
+    outputs:
+      REACTOR_VERSION: ${{ jobs.vars.outputs.REACTOR_VERSION }}
+      SEMVER: ${{ jobs.vars.outputs.SEMVER }}
+      VERSION_SUFFIX: ${{ jobs.vars.outputs.VERSION_SUFFIX }}
+      RC_VERSION: ${{ jobs.vars.outputs.RC_VERSION }}
+      SHORT_SHA: ${{ jobs.vars.outputs.SHORT_SHA }}
+      FULL_SHA: ${{ jobs.vars.outputs.FULL_SHA }}
+      GROUP_ID: ${{ jobs.vars.outputs.GROUP_ID }}
+  workflow_dispatch:
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      REACTOR_VERSION: ${{ steps.vars.outputs.REACTOR_VERSION }}
+      SEMVER: ${{ steps.vars.outputs.SEMVER }}
+      VERSION_SUFFIX: ${{ steps.vars.outputs.VERSION_SUFFIX }}
+      RC_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+      SHORT_SHA: ${{ steps.vars.outputs.SHORT_SHA }}
+      FULL_SHA: ${{ steps.vars.outputs.FULL_SHA }}
+      GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
+    steps:
+      - name: Setup Variables
+        id: vars
+        uses: ./.github/actions/setup-maven-build-variables
