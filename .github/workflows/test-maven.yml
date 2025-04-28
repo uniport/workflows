@@ -22,6 +22,9 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/setup-java
 
+      - name: Setup Helm
+        uses: ./.github/actions/add-helm-repositories
+
       - name: Set version
         run: |
           mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ steps.vars.outputs.RC_VERSION }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false

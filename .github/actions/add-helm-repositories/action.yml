@@ -1,0 +1,39 @@
+name: 'Setup Helm repositories'
+description: 'Sets up Helm repositories'
+inputs:
+  repositories:
+    description: 'A JSON list of Helm repository objects with `name` and `url` keys.'
+    required: false
+    default: |
+      [
+        {
+          "name": "inventage-portal-helm", 
+          "url": "https://nexus3.inventage.com/repository/inventage-portal-helm/"
+        }, 
+        {
+          "name": "inventage-portal-helm-staging", 
+          "url": "https://nexus3.inventage.com/repository/inventage-portal-helm-staging/"
+        }
+      ]
+  username:
+    description: 'The username for accessing Helm repositories'
+    required: false
+    default: ${{ vars.NEXUS3_USER }}
+  password:
+    description: 'The password for accessing Helm repositories'
+    required: false
+    default: ${{ secrets.NEXUS3_PW }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Add Helm repositories
+      shell: bash
+      if: ${{ fromJSON(inputs.helm-repositories) != '[]' }}
+      run: |
+        repositories=$(echo '${{ inputs.helm-repositories }}' | jq -c '.[]')
+        while IFS= read -r repo_json; do
+          repo_name=$(echo "$repo_json" | jq -r .name)
+          repo_url=$(echo "$repo_json" | jq -r .url)
+          helm repo add "$repo_name" "$repo_url" --username "${{ inputs.username }}" --password "${{ inputs.password }}"
+        done <<< "$repositories"
