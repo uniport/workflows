@@ -10,7 +10,7 @@ inputs:
   settings-file:
     description: 'Maven related setting to point to the settings.xml file used. Default is ~/.m2/settings.xml.'
     required: false
-    default: '~/.m2/settings.xml'
+    default: ''
 
 runs:
   using: 'composite'
@@ -21,8 +21,13 @@ runs:
       run: |
         ./.github/scripts/set-mvn-version.sh ${{ inputs.version }}
 
-    - name: Set version (mvn plugin)
+    - name: Set version (mvn plugin, custom settings)
       shell: bash
       if: ${{ inputs.script != 'true' }}
       run: |
-        mvn -B --no-transfer-progress --settings ${{ inputs.settings-file }} validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+        mvn_command="mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false"
+        if [[ -n "${{ inputs.settings-file }}" ]]; then
+          mvn_command="$mvn_command --settings ${{ inputs.settings-file }}"
+        fi
+        echo "Running Maven command: $mvn_command"
+        eval "$mvn_command"
