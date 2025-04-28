@@ -25,9 +25,9 @@ runs:
   steps:
     - name: Add Helm repositories
       shell: bash
-      if: ${{ fromJSON(inputs.helm-repositories) != '[]' }}
+      if: ${{ inputs.repositories != '[]' }}
       run: |
-        repositories=$(echo '${{ inputs.helm-repositories }}' | jq -c '.[]')
+        repositories=$(echo '${{ inputs.repositories }}' | jq -c '.[]')
         while IFS= read -r repo_json; do
           repo_name=$(echo "$repo_json" | jq -r .name)
           repo_url=$(echo "$repo_json" | jq -r .url)
