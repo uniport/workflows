@@ -51,7 +51,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 
 Some workflows can be run locally using [act](https://github.com/nektos/act).
 
-Example:
+Examples:
 
     act -W '.github/workflows/test-validate-version.yml' --input version=9.5.0-202504281107-91-fc989f5 --container-architecture linux/amd64
 
