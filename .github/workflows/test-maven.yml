@@ -13,24 +13,23 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      #      - name: Setup Java
-      #        uses: ./.github/actions/setup-java
-
-      - run: |
-          echo ${{ secrets.NEXUS3_PW }}
+      - name: Setup Java
+        uses: ./.github/actions/setup-java
 
       - name: Setup Helm
         uses: ./.github/actions/add-helm-repositories
         with:
           username: ${{ vars.NEXUS3_USER }}
           password: ${{ secrets.NEXUS3_PW }}
-#      - name: Setup Variables
-#        id: vars
-#        uses: ./.github/actions/setup-maven-build-variables
-#      - name: Set version
-#        run: |
-#          mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ steps.vars.outputs.RC_VERSION }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
-#
-#      - name: Maven build
-#        run: |
-#          mvn -B -V --no-transfer-progress --update-snapshots -P!local,ci -DmultiArchBuild=true verify
+
+      - name: Setup Variables
+        id: vars
+        uses: ./.github/actions/setup-maven-build-variables
+
+      - name: Set version
+        run: |
+          mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ steps.vars.outputs.RC_VERSION }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+
+      - name: Maven build
+        run: |
+          mvn -B -V --no-transfer-progress --update-snapshots -P!local,ci -DmultiArchBuild=true verify

@@ -15,3 +15,4 @@ jobs:
   test_maven:
     name: Test Maven Build
     uses: ./.github/workflows/test-maven.yml
+    secrets: inherit
