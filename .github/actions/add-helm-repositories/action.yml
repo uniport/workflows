@@ -5,7 +5,6 @@ inputs:
     description: 'The username for accessing Helm repositories'
   password:
     description: 'The password for accessing Helm repositories'
-    secret: true
   repositories:
     description: 'A JSON list of Helm repository objects with `name` and `url` keys.'
     required: false
