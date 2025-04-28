@@ -33,7 +33,7 @@ runs:
       shell: bash
       run: |
         # Read version from pom.xml
-        VERSION=$(mvn -B help:evaluate -Dexpression=project.version -q -DforceStdout)
+        VERSION=$(mvn -B --offline help:evaluate -Dexpression=project.version -q -DforceStdout)
 
         # Validate version
         if [[ -z "$VERSION" ]]; then
@@ -42,7 +42,7 @@ runs:
         fi
 
         # Read other attributes from pom.xml
-        GROUP_ID=$(mvn -B help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+        GROUP_ID=$(mvn -B --offline help:evaluate -Dexpression=project.groupId -q -DforceStdout)
 
         # Validate groupId
         if [[ -z "$GROUP_ID" ]]; then
