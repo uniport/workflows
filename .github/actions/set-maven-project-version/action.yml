@@ -1,0 +1,24 @@
+name: 'Set Maven Project Version'
+description: 'Sets the project version in all maven modules'
+inputs:
+  version:
+    description: 'The version to update in the Maven module(s)'
+    required: true
+  script:
+    description: 'Whether to use the update version script instead of the maven build-helper plugin'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set version (script)
+      shell: bash
+      if: ${{ inputs.script == 'true' }}
+      run: |
+        ./.github/scripts/set-mvn-version.sh ${{ inputs.version }}
+
+    - name: Set version (mvn plugin)
+      shell: bash
+      if: ${{ inputs.script != 'true' }}
+      run: |
+        mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false

@@ -52,7 +52,7 @@ jobs:
           fetch-depth: 1 # Fetch only the latest commit
 
       - name: Validate version format
-        run: ./.github/scripts/validate_version.sh "${{ inputs.version }}"
+        run: ./.github/scripts/validate-version.sh "${{ inputs.version }}"
 
       # Generate a token for the Uniport GitHub App
       - name: Generate GitHub App Token

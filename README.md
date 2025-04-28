@@ -14,6 +14,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 - [Setup Java](./.github/actions/setup-java)
 - [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
 - [Setup Node.JS and NPM dependencies](./.github/actions/setup-node-and-dependencies)
+- [Setup Maven Project Version](./.github/actions/set-maven-project-version)
 
 ## Workflows
 
