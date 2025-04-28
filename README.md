@@ -5,6 +5,15 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 > [!IMPORTANT]  
 > Start with these two articles in the GitHub Actions documentation: [Reusing workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) and [Avoiding duplication](https://docs.github.com/en/actions/sharing-automations/avoiding-duplication)
 
+## Actions
+
+> [!TIP]
+> Composite actions available in this repository.
+
+- [Setup Java](./.github/actions/setup-java)
+- [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
+- [Setup Node.JS and NPM dependencies](./.github/actions/setup-node-and-dependencies)
+
 ## Workflows vs. Actions
 
 | Reusable workflows                                                                           | Composite actions                                                                                                            |
