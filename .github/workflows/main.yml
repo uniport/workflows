@@ -7,6 +7,12 @@ on:
       - main
   workflow_dispatch:
 
+# Prevent running builds for the same branch in parallel
+# New workflows will cancel existing workflows…
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Lint
