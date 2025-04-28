@@ -10,6 +10,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 > [!TIP]
 > Composite actions available in this repository.
 
+- [Add Helm repositories](./.github/actions/add-helm-repositories)
 - [Setup Java](./.github/actions/setup-java)
 - [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
 - [Setup Node.JS and NPM dependencies](./.github/actions/setup-node-and-dependencies)
