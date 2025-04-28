@@ -1,0 +1,51 @@
+name: Nexus Tag Associate
+run-name: 'Nexus associate tag workflow #${{ github.run_number }} triggered by ${{ github.actor }}'
+
+on:
+  workflow_call:
+    secrets:
+      NEXUS3_PW:
+        required: true
+    inputs:
+      repo_id:
+        description: 'The ID of the Nexus repository to search for'
+        type: string
+        required: true
+      version:
+        description: 'The version of the components to search for'
+        type: string
+        required: true
+      tag_name:
+        description: 'The name of the tag to associate the components with'
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      repo_id:
+        description: 'The ID of the Nexus repository to search for'
+        type: string
+        required: true
+      version:
+        description: 'The version of the components to search for'
+        type: string
+        required: true
+      tag_name:
+        description: 'The name of the tag to associate the components with'
+        type: string
+        required: true
+
+env:
+  NEXUS3_URL: ${{ vars.NEXUS3_URL }}
+  NEXUS3_USER: ${{ vars.NEXUS3_USER }}
+
+jobs:
+  associate:
+    name: Tag Associate
+    runs-on: ubuntu-latest
+    steps:
+      # https://help.sonatype.com/en/tagging.html
+      - name: Associate Components with Nexus Tag
+        run: |
+          curl -fSs -X POST \
+          -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
+          '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository=${{ inputs.repo_id }}&version="${{ inputs.version }}"'

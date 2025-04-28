@@ -1,0 +1,145 @@
+name: Tag Artifacts
+
+on:
+  workflow_call:
+    secrets:
+      NEXUS3_PW:
+        required: true
+    inputs:
+      version:
+        description: 'The version to create a tag and associate components for'
+        type: string
+        required: true
+      group_id:
+        description: 'The group ID attribute'
+        type: string
+        required: true
+      tag_name:
+        description: 'The tag name to create (defaults to <group_id>-<version> if not provided)'
+        type: string
+        required: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version to create a tag and associate components for'
+        type: string
+        required: true
+      group_id:
+        description: 'The group ID attribute'
+        type: string
+        required: true
+      tag_name:
+        description: 'The tag name to create (defaults to <group_id>-<version> if not provided)'
+        type: string
+        required: false
+
+# TODO: Could even be variables in the uniport organisation
+env:
+  TAG_NAME_SUFFIX_HELM: _helm
+  TAG_NAME_SUFFIX_DOCKER: _docker
+  TAG_NAME_SUFFIX_MAVEN: _maven
+  STAGING_REPO_HELM: inventage-portal-helm-staging
+  STAGING_REPO_DOCKER: inventage-portal-docker-staging
+  STAGING_REPO_MAVEN: inventage-portal-maven-staging
+
+jobs:
+  tag:
+    name: Setup Tag Name
+    runs-on: ubuntu-latest
+    outputs:
+      TAG_NAME: ${{ steps.tag.outputs.TAG_NAME }}
+      TAG_NAME_MAVEN: ${{ steps.tag.outputs.TAG_NAME_MAVEN }}
+      TAG_NAME_DOCKER: ${{ steps.tag.outputs.TAG_NAME_DOCKER }}
+      TAG_NAME_HELM: ${{ steps.tag.outputs.TAG_NAME_HELM }}
+      STAGING_REPO_MAVEN: ${{ env.STAGING_REPO_MAVEN }}
+      STAGING_REPO_DOCKER: ${{ env.STAGING_REPO_DOCKER }}
+      STAGING_REPO_HELM: ${{ env.STAGING_REPO_HELM }}
+    steps:
+      - name: Set Tag Name
+        id: tag
+        run: |
+          TAG_NAME=${{ inputs.tag_name }}
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="${{ inputs.group_id }}-${{ inputs.version }}"
+          fi
+          TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}" # Calculate all tag names
+          TAG_NAME_DOCKER="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_DOCKER }}"
+          TAG_NAME_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_HELM }}"
+
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "TAG_NAME_MAVEN=$TAG_NAME_MAVEN" >> $GITHUB_OUTPUT # Output tag names
+          echo "TAG_NAME_DOCKER=$TAG_NAME_DOCKER" >> $GITHUB_OUTPUT
+          echo "TAG_NAME_HELM=$TAG_NAME_HELM" >> $GITHUB_OUTPUT
+          echo "STAGING_REPO_MAVEN=${{ env.STAGING_REPO_MAVEN }}" >> $GITHUB_OUTPUT # Output repo IDs
+          echo "STAGING_REPO_DOCKER=${{ env.STAGING_REPO_DOCKER }}" >> $GITHUB_OUTPUT
+          echo "STAGING_REPO_HELM=${{ env.STAGING_REPO_HELM }}" >> $GITHUB_OUTPUT
+
+          echo "## Setup Tag Name Details" >> $GITHUB_STEP_SUMMARY
+          echo "### Outputs" >> $GITHUB_STEP_SUMMARY
+          echo "- **TAG_NAME**: \`$TAG_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **TAG_NAME_MAVEN**: \`$TAG_NAME_MAVEN\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **TAG_NAME_DOCKER**: \`$TAG_NAME_DOCKER\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **TAG_NAME_HELM**: \`$TAG_NAME_HELM\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **STAGING_REPO_MAVEN**: \`${{ env.STAGING_REPO_MAVEN }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **STAGING_REPO_DOCKER**: \`${{ env.STAGING_REPO_DOCKER }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **STAGING_REPO_HELM**: \`${{ env.STAGING_REPO_HELM }}\`" >> $GITHUB_STEP_SUMMARY
+
+  tag_mvn:
+    name: Create Tag (maven)
+    uses: ./.github/workflows/nexus-tag-create.yml
+    needs: [tag]
+    with:
+      name: ${{ needs.tag.outputs.TAG_NAME_MAVEN }} # Use the specific output
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  tag_docker:
+    name: Create Tag (docker)
+    uses: ./.github/workflows/nexus-tag-create.yml
+    needs: [tag]
+    with:
+      name: ${{ needs.tag.outputs.TAG_NAME_DOCKER }} # Use the specific output
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  tag_helm:
+    name: Create Tag (helm)
+    uses: ./.github/workflows/nexus-tag-create.yml
+    needs: [tag]
+    with:
+      name: ${{ needs.tag.outputs.TAG_NAME_HELM }} # Use the specific output
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  associate_mvn:
+    name: Associate Components (maven)
+    uses: ./.github/workflows/nexus-tag-associate.yml
+    needs: [tag, tag_mvn]
+    with:
+      repo_id: ${{ needs.tag.outputs.STAGING_REPO_MAVEN }}
+      tag_name: ${{ needs.tag.outputs.TAG_NAME_MAVEN }}
+      version: ${{ inputs.version }}
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  associate_docker:
+    name: Associate Components (docker)
+    uses: ./.github/workflows/nexus-tag-associate.yml
+    needs: [tag, tag_docker]
+    with:
+      repo_id: ${{ needs.tag.outputs.STAGING_REPO_DOCKER }}
+      tag_name: ${{ needs.tag.outputs.TAG_NAME_DOCKER }}
+      version: ${{ inputs.version }}
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  associate_helm:
+    name: Associate Components (helm)
+    uses: ./.github/workflows/nexus-tag-associate.yml
+    needs: [tag, tag_helm]
+    with:
+      repo_id: ${{ needs.tag.outputs.STAGING_REPO_HELM }}
+      tag_name: ${{ needs.tag.outputs.TAG_NAME_HELM }}
+      version: ${{ inputs.version }}
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
