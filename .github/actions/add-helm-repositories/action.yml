@@ -19,6 +19,7 @@ inputs:
     description: 'The username for accessing Helm repositories'
   password:
     description: 'The password for accessing Helm repositories'
+    secret: true
 
 runs:
   using: 'composite'
