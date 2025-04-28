@@ -46,13 +46,14 @@ jobs:
       url: https://ips.inventage.dev/
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Workflows Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1 # Fetch only the latest commit
+          repository: uniport/workflows
+          path: shared
 
       - name: Validate version format
-        run: ./.github/scripts/validate-version.sh "${{ inputs.version }}"
+        run: shared/.github/scripts/validate-version.sh "${{ inputs.version }}"
 
       # Generate a token for the Uniport GitHub App
       - name: Generate GitHub App Token
