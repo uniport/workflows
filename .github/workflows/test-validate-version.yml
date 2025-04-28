@@ -11,7 +11,6 @@ on:
 
 jobs:
   validate:
-    name: Send Message
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
