@@ -46,6 +46,8 @@ jobs:
       url: https://ips.inventage.dev/
 
     steps:
+      # In GitHub Actions, composite actions only include the steps defined in the deploy-dev.yml file
+      # and do not automatically bundle additional files (like scripts) from the repository unless explicitly checked out.
       - name: Checkout Workflows Repository
         uses: actions/checkout@v4
         with:
