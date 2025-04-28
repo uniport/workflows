@@ -1,0 +1,26 @@
+name: 'Setup NPM Nexus Access'
+description: 'Sets an access token for a NPM repository on Nexus'
+
+inputs:
+  token:
+    description: 'The NPM token to setup'
+  repository:
+    description: 'The Nexus repository to use'
+  nexus-url:
+    description: 'The Nexus base URL'
+    required: true
+    default: 'nexus3.inventage.com'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Add Nexus NPM credentials
+      shell: bash
+      run: |
+        cat << EOF >> .npmrc
+        //$NEXUS_URL/repository/$NPM_REPOSITORY/:_authToken=$NPM_TOKEN
+        EOF
+      env:
+        NPM_TOKEN: ${{ input.token }}
+        NPM_REPOSITORY: ${{ input.repository }}
+        NEXUS_URL: ${{ input.nexus-url }}

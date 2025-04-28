@@ -16,6 +16,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 - [Setup Node.JS and NPM dependencies](./.github/actions/setup-node-and-dependencies)
 - [Setup Maven Project Version](./.github/actions/set-maven-project-version)
 - [Validate Version](./.github/actions/validate-version)
+- [Setup Nexus NPM Repository Access](./.github/actions/setup-npm-nexus-access)
 
 ## Workflows
 
