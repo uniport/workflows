@@ -10,6 +10,10 @@ inputs:
     description: 'The Nexus base URL'
     required: true
     default: 'nexus3.inventage.com'
+  auth-file:
+    description: 'The target .npmrc file where authentication will be saved. Defaults to ~/.npmrc'
+    required: true
+    default: '${{ github.workspace }}/.npmrc'
 
 runs:
   using: 'composite'
@@ -17,7 +21,7 @@ runs:
     - name: Add Nexus NPM credentials
       shell: bash
       run: |
-        cat << EOF >> .npmrc
+        cat << EOF >> '${{ inputs.auth-file }}'
         //$NEXUS_URL/repository/$NPM_REPOSITORY/:_authToken=$NPM_TOKEN
         EOF
       env:
