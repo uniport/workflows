@@ -17,12 +17,8 @@ inputs:
       ]
   username:
     description: 'The username for accessing Helm repositories'
-    required: false
-    default: ${{ vars.NEXUS3_USER }}
   password:
     description: 'The password for accessing Helm repositories'
-    required: false
-    default: ${{ secrets.NEXUS3_PW }}
 
 runs:
   using: 'composite'

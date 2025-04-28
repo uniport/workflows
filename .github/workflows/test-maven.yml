@@ -24,6 +24,9 @@ jobs:
 
       - name: Setup Helm
         uses: ./.github/actions/add-helm-repositories
+        with:
+          username: ${{ vars.NEXUS3_USER }}
+          password: ${{ secrets.NEXUS3_PW }}
 
       - name: Set version
         run: |
