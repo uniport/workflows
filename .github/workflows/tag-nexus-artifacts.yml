@@ -22,22 +22,22 @@ on:
         description: 'Enable or disable tagging of maven artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
       tag_docker:
         description: 'Enable or disable tagging of Docker artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
       tag_helm:
         description: 'Enable or disable tagging of Helm artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
       tag_npm:
         description: 'Enable or disable tagging of NPM artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
   workflow_dispatch:
     inputs:
       version:
@@ -56,22 +56,22 @@ on:
         description: 'Enable or disable tagging of Maven artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
       tag_docker:
         description: 'Enable or disable tagging of Docker artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
       tag_helm:
         description: 'Enable or disable tagging of Helm artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
       tag_npm:
         description: 'Enable or disable tagging of NPM artifacts'
         type: boolean
         required: false
-        default: false
+        default: true
 
 # TODO: Could even be variables in the uniport organisation
 env:
