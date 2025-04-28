@@ -1,6 +1,11 @@
 name: 'Setup Helm repositories'
 description: 'Sets up Helm repositories'
 inputs:
+  username:
+    description: 'The username for accessing Helm repositories'
+  password:
+    description: 'The password for accessing Helm repositories'
+    secret: true
   repositories:
     description: 'A JSON list of Helm repository objects with `name` and `url` keys.'
     required: false
@@ -15,11 +20,6 @@ inputs:
           "url": "https://nexus3.inventage.com/repository/inventage-portal-helm-staging/"
         }
       ]
-  username:
-    description: 'The username for accessing Helm repositories'
-  password:
-    description: 'The password for accessing Helm repositories'
-    secret: true
 
 runs:
   using: 'composite'
