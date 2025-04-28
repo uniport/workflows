@@ -21,4 +21,4 @@ runs:
       shell: bash
       if: ${{ inputs.script != 'true' }}
       run: |
-        mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+        mvn -B --offline build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
