@@ -1,0 +1,23 @@
+name: Validate Version Test
+run-name: 'Validating version ${{ inputs.version }} using shared action'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version to validate'
+        type: string
+        required: true
+
+jobs:
+  validate:
+    name: Send Message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Version
+        uses: ./.github/actions/validate-version
+        with:
+          version: ${{ inputs.version }}
