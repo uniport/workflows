@@ -1,0 +1,92 @@
+name: Deploy DEV
+run-name: 'DEV deployment #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
+
+on:
+  workflow_call:
+    secrets:
+      UNIPORT_APP_PRIVATE_KEY:
+        required: true
+    inputs:
+      version:
+        description: 'The version string'
+        required: true
+        type: string
+      component_name:
+        description: 'Portal component name to update its version in the deployment repository'
+        required: true
+        type: string
+      branch:
+        description: 'The branch to use in the deployment repository'
+        type: string
+        default: 'main'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version string'
+        required: true
+        type: string
+      component_name:
+        description: 'Portal component name to update its version in the deployment repository'
+        required: true
+        type: string
+      branch:
+        description: 'The branch to use in the deployment repository'
+        required: true
+        type: choice
+        options:
+          - main
+        default: 'main'
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://ips.inventage.dev/
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Fetch only the latest commit
+
+      - name: Validate version format
+        run: ./.github/scripts/validate_version.sh "${{ inputs.version }}"
+
+      # Generate a token for the Uniport GitHub App
+      - name: Generate GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.UNIPORT_APP_ID }}
+          private-key: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            uniport-deployment
+
+      - name: Checkout other repository
+        uses: actions/checkout@v4
+        with:
+          repository: uniport/uniport-deployment
+          token: ${{ steps.app-token.outputs.token }}
+          ref: main
+          path: deployment-repo
+
+      - name: Configure Git user
+        run: |
+          cd deployment-repo
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Configure deployment
+        run: |
+          cd deployment-repo
+          ./updateVersion.sh portal-gateway "${{ inputs.version }}"
+          git push origin ${{ inputs.branch }}
+
+      - name: Summary
+        run: |
+          echo "## Deploy DEV Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **version**: \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **branch**: \`${{ inputs.branch }}\`" >> $GITHUB_STEP_SUMMARY
