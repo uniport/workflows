@@ -7,6 +7,10 @@ inputs:
   script:
     description: 'Whether to use the update version script instead of the maven build-helper plugin'
     required: false
+  settings-file:
+    description: 'Maven related setting to point to the settings.xml file used. Default is ~/.m2/settings.xml.'
+    required: false
+    default: '~/.m2/settings.xml'
 
 runs:
   using: 'composite'
@@ -21,4 +25,4 @@ runs:
       shell: bash
       if: ${{ inputs.script != 'true' }}
       run: |
-        mvn -B --offline build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+        mvn -B --settings ${{ input.settings-file }} build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
