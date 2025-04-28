@@ -21,6 +21,6 @@ runs:
         //$NEXUS_URL/repository/$NPM_REPOSITORY/:_authToken=$NPM_TOKEN
         EOF
       env:
-        NPM_TOKEN: ${{ input.token }}
-        NPM_REPOSITORY: ${{ input.repository }}
-        NEXUS_URL: ${{ input.nexus-url }}
+        NPM_TOKEN: ${{ inputs.token }}
+        NPM_REPOSITORY: ${{ inputs.repository }}
+        NEXUS_URL: ${{ inputs.nexus-url }}
