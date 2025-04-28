@@ -46,13 +46,13 @@ jobs:
       url: https://ips.inventage.dev/
 
     steps:
-      # In GitHub Actions, composite actions only include the steps defined in the deploy-dev.yml file
+      # In GitHub Actions, composite actions and shared workflows only include the steps defined in the deploy-dev.yml file
       # and do not automatically bundle additional files (like scripts) from the repository unless explicitly checked out.
       - name: Checkout Workflows Repository
         uses: actions/checkout@v4
         with:
           repository: uniport/workflows
-          ref: main
+          ref: main # TODO: Not ideal, since it does not respect github.action_ref and always checks out main…
           path: shared
 
       - name: Validate version format
