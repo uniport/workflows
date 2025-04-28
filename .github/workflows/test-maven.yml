@@ -1,0 +1,14 @@
+name: Maven Test
+run-name: 'Maven test build #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Variables
+        id: vars
+        uses: ./.github/actions/setup-maven-build-variables
