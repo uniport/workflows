@@ -28,4 +28,4 @@ jobs:
 
       - name: Maven build
         run: |
-          mvn -B -V --no-transfer-progress --update-snapshots -P!local,ci -DmultiArchBuild=true deploy
+          mvn -B -V --no-transfer-progress --update-snapshots -P!local,ci -DmultiArchBuild=true verify
