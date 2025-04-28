@@ -28,11 +28,9 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Setup variables
+    - name: Setup maven variables
       shell: bash
-      id: vars
-      # mvn already installed on the shared runners so we don't need to set it up
-      # @see https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
+      id: maven
       run: |
         # Read version from pom.xml
         VERSION=$(mvn -B --offline help:evaluate -Dexpression=project.version -q -DforceStdout)
@@ -43,6 +41,27 @@ runs:
           exit 1
         fi
 
+        # Read other attributes from pom.xml
+        GROUP_ID=$(mvn -B --offline help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+
+        # Validate groupId
+        if [[ -z "$GROUP_ID" ]]; then
+          echo "Error: groupId is empty" >&2
+          exit 1
+        fi
+
+        # Save outputs
+        echo "REACTOR_VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "GROUP_ID=$GROUP_ID" >> $GITHUB_OUTPUT
+
+    - name: Setup variables
+      shell: bash
+      id: vars
+      # mvn already installed on the shared runners so we don't need to set it up
+      # @see https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
+      env:
+        VERSION: ${{ steps.maven.outputs.REACTOR_VERSION }}
+      run: |
         # Version without -SNAPSHOT
         SEMVER=$(echo "$VERSION" | sed 's/-SNAPSHOT$//')
 
@@ -61,9 +80,6 @@ runs:
         # Construct RC_VERSION
         RC_VERSION="${SEMVER}-${VERSION_SUFFIX}"
 
-        # Read other attributes from pom.xml
-        GROUP_ID=$(mvn -B --offline help:evaluate -Dexpression=project.groupId -q -DforceStdout)
-
         # Save outputs
         echo "REACTOR_VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "SEMVER=$SEMVER" >> $GITHUB_OUTPUT
@@ -78,10 +94,10 @@ runs:
       run: |
         echo "## Setup Maven Build Variables (Action)" >> $GITHUB_STEP_SUMMARY
         echo "### Outputs" >> $GITHUB_STEP_SUMMARY
-        echo "- **REACTOR_VERSION**: \`${{ steps.vars.outputs.REACTOR_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **REACTOR_VERSION**: \`${{ steps.maven.outputs.REACTOR_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **SEMVER**: \`${{ steps.vars.outputs.SEMVER }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **VERSION_SUFFIX**: \`${{ steps.vars.outputs.VERSION_SUFFIX }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **RC_VERSION**: \`${{ steps.vars.outputs.RC_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **SHORT_SHA**: \`${{ steps.vars.outputs.SHORT_SHA }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **FULL_SHA**: \`${{ steps.vars.outputs.FULL_SHA }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **GROUP_ID**: \`${{ steps.vars.outputs.GROUP_ID }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **GROUP_ID**: \`${{ steps.vars.maven.GROUP_ID }}\`" >> $GITHUB_STEP_SUMMARY
