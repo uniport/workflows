@@ -3,6 +3,7 @@ run-name: 'Maven test build #${{ github.run_number }} triggered by ${{ github.ac
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build:
@@ -17,3 +18,14 @@ jobs:
       - name: Setup Variables
         id: vars
         uses: ./.github/actions/setup-maven-build-variables
+
+      - name: Setup Java
+        uses: ./.github/actions/setup-java
+
+      - name: Set version
+        run: |
+          mvn -B --no-transfer-progress build-helper:parse-version versions:set -DnewVersion=${{ steps.vars.outputs.RC_VERSION }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+
+      - name: Maven build
+        run: |
+          mvn -B -V --no-transfer-progress --update-snapshots -P!local,ci -DmultiArchBuild=true deploy

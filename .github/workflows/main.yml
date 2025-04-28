@@ -11,3 +11,7 @@ jobs:
   lint:
     name: Lint
     uses: ./.github/workflows/npm-lint.yml
+
+  test_maven:
+    name: Test Maven Build
+    uses: ./.github/workflows/test-maven.yml
