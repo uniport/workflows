@@ -14,6 +14,13 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 - [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
 - [Setup Node.JS and NPM dependencies](./.github/actions/setup-node-and-dependencies)
 
+## Workflows
+
+> [!TIP]
+> Reusable workflows available in this repository.
+
+- [NPM Lint](./.github/workflows/npm-lint.yml) - Runs NPM the `lint` command defined in `package.json` to ensure code quality and adherence to coding standards.
+
 ## Workflows vs. Actions
 
 | Reusable workflows                                                                           | Composite actions                                                                                                            |
