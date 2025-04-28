@@ -7,11 +7,11 @@ inputs:
     default: |
       [
         {
-          "name": "inventage-portal-helm", 
+          "name": "inventage-portal-helm",
           "url": "https://nexus3.inventage.com/repository/inventage-portal-helm/"
-        }, 
+        },
         {
-          "name": "inventage-portal-helm-staging", 
+          "name": "inventage-portal-helm-staging",
           "url": "https://nexus3.inventage.com/repository/inventage-portal-helm-staging/"
         }
       ]
@@ -27,9 +27,11 @@ runs:
       shell: bash
       if: ${{ inputs.repositories != '[]' }}
       run: |
-        repositories=$(echo '${{ inputs.repositories }}' | jq -c '.[]')
-        while IFS= read -r repo_json; do
+        repositories="${{ inputs.repositories }}"
+        echo "$repositories" | jq -c '.[]' | while IFS= read -r repo_json; do
           repo_name=$(echo "$repo_json" | jq -r .name)
           repo_url=$(echo "$repo_json" | jq -r .url)
-          helm repo add "$repo_name" "$repo_url" --username "${{ inputs.username }}" --password "${{ inputs.password }}"
-        done <<< "$repositories"
+          export HELM_PASSWORD="${{ inputs.password }}"
+          helm repo add "$repo_name" "$repo_url" --username "${{ inputs.username }}"
+          unset HELM_PASSWORD
+        done
