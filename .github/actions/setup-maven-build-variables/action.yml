@@ -31,11 +31,9 @@ runs:
     - name: Setup variables
       shell: bash
       id: vars
-      # mvn already installed on the shared runners so we don't need to set it up
-      # @see https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md
       run: |
         # Read version from pom.xml
-        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        VERSION=$(awk '/<version>/ {gsub(/.*<version>|<\/version>.*/, ""); print; exit}' pom.xml)
 
         # Validate version
         if [[ -z "$VERSION" ]]; then
@@ -62,7 +60,7 @@ runs:
         RC_VERSION="${SEMVER}-${VERSION_SUFFIX}"
 
         # Read other attributes from pom.xml
-        GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+        GROUP_ID=$(awk '/<groupId>/ {gsub(/.*<groupId>|<\/groupId>.*/, ""); print; exit}' pom.xml)
 
         # Save outputs
         echo "REACTOR_VERSION=$VERSION" >> $GITHUB_OUTPUT
