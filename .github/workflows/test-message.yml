@@ -1,5 +1,5 @@
-name: Message Test
-run-name: 'Message Test (to #${{ inputs.channel }})'
+name: '[Test] Rocket.Chat Message'
+run-name: '[Test] Rocket.Chat Message (to #${{ inputs.channel }})'
 
 on:
   workflow_dispatch:

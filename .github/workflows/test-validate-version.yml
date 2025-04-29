@@ -1,5 +1,5 @@
-name: Validate Version Test
-run-name: 'Validating version ${{ inputs.version }} using shared action'
+name: '[Test] Validate Version'
+run-name: '[Test] Validating version ${{ inputs.version }} using shared action'
 
 on:
   workflow_dispatch:
