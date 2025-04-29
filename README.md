@@ -2,6 +2,8 @@
 
 A collection of reusable workflows and composite actions to avoid duplicating the content of workflows in GitHub actions.
 
+[![Main build](https://github.com/uniport/workflows/actions/workflows/main.yml/badge.svg)](https://github.com/uniport/workflows/actions/workflows/main.yml)
+
 > [!IMPORTANT]  
 > Start with these two articles in the GitHub Actions documentation: [Reusing workflows](https://docs.github.com/en/actions/sharing-automations/reusing-workflows) and [Avoiding duplication](https://docs.github.com/en/actions/sharing-automations/avoiding-duplication)
 
