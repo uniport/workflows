@@ -73,16 +73,15 @@ on:
         required: false
         default: true
 
-# TODO: Could even be variables in the uniport organisation
 env:
-  TAG_NAME_SUFFIX_HELM: _helm
-  TAG_NAME_SUFFIX_DOCKER: _docker
-  TAG_NAME_SUFFIX_MAVEN: _maven
-  TAG_NAME_SUFFIX_NPM: _npm
-  STAGING_REPO_HELM: inventage-portal-helm-staging
-  STAGING_REPO_DOCKER: inventage-portal-docker-staging
-  STAGING_REPO_MAVEN: inventage-portal-maven-staging
-  STAGING_REPO_NPM: inventage-portal-npm-staging
+  TAG_NAME_SUFFIX_HELM: ${{ vars.TAG_NAME_SUFFIX_HELM }}
+  TAG_NAME_SUFFIX_DOCKER: ${{ vars.TAG_NAME_SUFFIX_DOCKER }}
+  TAG_NAME_SUFFIX_MAVEN: ${{ vars.TAG_NAME_SUFFIX_MAVEN }}
+  TAG_NAME_SUFFIX_NPM: ${{ vars.TAG_NAME_SUFFIX_NPM }}
+  STAGING_REPO_HELM: ${{ vars.STAGING_REPO_HELM }}
+  STAGING_REPO_DOCKER: ${{ vars.STAGING_REPO_DOCKER }}
+  STAGING_REPO_MAVEN: ${{ vars.STAGING_REPO_MAVEN }}
+  STAGING_REPO_NPM: ${{ vars.STAGING_REPO_NPM }}
 
 jobs:
   tag:
