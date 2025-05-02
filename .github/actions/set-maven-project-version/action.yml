@@ -25,8 +25,13 @@ runs:
       shell: bash
       if: ${{ inputs.script != 'true' }}
       run: |
-        mvn_command="mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false"
-        if [[ -n "${{ inputs.settings-file }}" ]]; then
-          mvn_command="$mvn_command --settings ${{ inputs.settings-file }}"
+        if [[ -n "${{ inputs.settings-file }}" && ! -f "${{ inputs.settings-file }}" ]]; then
+          echo "Error: Settings file '${{ inputs.settings-file }}' does not exist."
+          exit 1
         fi
-        eval "$mvn_command"
+
+        if [[ -n "${{ inputs.settings-file }}" ]]; then
+          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false --settings "$(printf '%q' "${{ inputs.settings-file }}")"
+        else
+          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+        fi
