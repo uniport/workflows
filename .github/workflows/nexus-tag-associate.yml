@@ -48,4 +48,4 @@ jobs:
         run: |
           curl -fSs -X POST \
           -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
-          '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository=${{ inputs.repo_id }}&version="${{ inputs.version }}"'
+          '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository="${{ inputs.repo_id }}"&version="${{ inputs.version }}"'
