@@ -17,16 +17,8 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Checkout action repository
-      uses: actions/checkout@v4
-      with:
-        repository: 'uniport/workflows'
-        ref: ${{ github.action_ref }}
-        path: './action-repo'
-        token: ${{ inputs.repo_token }}
-
     # No need to install Node as it is available on all GitHub runners…
     - name: Send Rocket.Chat message
       shell: bash
       run: |
-        node ./action-repo/.github/scripts/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} '${{ inputs.message }}'
+        node ${{ github.action_path }}/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} '${{ inputs.message }}'
