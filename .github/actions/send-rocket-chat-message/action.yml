@@ -10,6 +10,9 @@ inputs:
   message:
     description: 'The message to send'
     required: true
+  repo_token:
+    description: 'GitHub token with read access to the action repository'
+    required: true
 
 runs:
   using: 'composite'
@@ -20,6 +23,7 @@ runs:
         repository: 'uniport/workflows'
         ref: ${{ github.action_ref }}
         path: './action-repo'
+        token: ${{ inputs.repo_token }}
 
     # No need to install Node as it is available on all GitHub runners…
     - name: Send Rocket.Chat message
