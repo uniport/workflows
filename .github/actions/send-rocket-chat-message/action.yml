@@ -10,6 +10,9 @@ inputs:
   message:
     description: 'The message to send'
     required: true
+  repo_token:
+    description: 'GitHub token with read access to the action repository'
+    required: true
 
 runs:
   using: 'composite'
@@ -18,4 +21,4 @@ runs:
     - name: Send Rocket.Chat message
       shell: bash
       run: |
-        node ./.github/scripts/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} '${{ inputs.message }}'
+        node ${{ github.action_path }}/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} "${{ inputs.message }}"
