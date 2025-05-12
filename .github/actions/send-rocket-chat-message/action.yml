@@ -21,4 +21,4 @@ runs:
     - name: Send Rocket.Chat message
       shell: bash
       run: |
-        node ${{ github.action_path }}/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} '${{ inputs.message }}'
+        node ${{ github.action_path }}/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} "${{ inputs.message }}"
