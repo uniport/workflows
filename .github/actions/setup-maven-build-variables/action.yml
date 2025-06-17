@@ -33,7 +33,7 @@ runs:
       id: vars
       run: |
         # Read version from pom.xml
-        VERSION=$(awk '/<version>/ {gsub(/.*<version>|<\/version>.*/, ""); print; exit}' pom.xml)
+        VERSION=$(awk '/<version>.*SNAPSHOT<\/version>/ {gsub(/.*<version>|<\/version>.*/, ""); print; exit}' pom.xml)
 
         # Validate version
         if [[ -z "$VERSION" ]]; then
