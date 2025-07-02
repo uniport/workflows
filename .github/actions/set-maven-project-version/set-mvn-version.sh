@@ -16,16 +16,8 @@ readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
 readonly BLUE='\033[0;34m'
 
-# Determine the repository root directory
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-git_exit_code=$?
-if [[ $git_exit_code -ne 0 || -z "${REPO_ROOT}" ]]; then
-    print_error "Not inside a Git repository (or Git command failed). Ensure the script is run within a Git repository containing mvnw."
-    exit 1
-fi
-
-# Construct the path to mvnw wrapper
-readonly MVNW_PATH="${REPO_ROOT}/mvnw"
+# Maven command variable that will be set based on availability
+MVN_CMD=""
 
 function print_info() {
     local msg="$1"
@@ -42,11 +34,57 @@ function print_error() {
     echo -e "${RED}${msg}${NO_COLOR}"
 }
 
+# Function to check if a command exists
+function command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Function to initialize Maven command
+function init_maven_command() {
+    local mvnw_found=false
+    local mvn_found=false
+
+    # First, try to find the repository root and mvnw
+    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+    git_exit_code=$?
+
+    if [[ $git_exit_code -eq 0 && -n "${REPO_ROOT}" ]]; then
+        # We're in a git repository
+        readonly MVNW_PATH="${REPO_ROOT}/mvnw"
+
+        if [[ -f "${MVNW_PATH}" && -x "${MVNW_PATH}" ]]; then
+            mvnw_found=true
+            print_info "Found Maven wrapper at: ${MVNW_PATH}"
+        fi
+    fi
+
+    # Check for globally installed mvn
+    if command_exists mvn; then
+        mvn_found=true
+        print_info "Found globally installed Maven: $(which mvn)"
+    fi
+
+    # Decide which Maven command to use based on preference and availability
+    if [[ "${mvnw_found}" == true ]]; then
+        MVN_CMD="${MVNW_PATH}"
+        print_success "Using Maven wrapper from repository"
+    elif [[ "${mvn_found}" == true ]]; then
+        MVN_CMD="mvn"
+        print_success "Using globally installed Maven"
+    else
+        print_error "Error: Neither maven wrapper (mvnw) nor globally installed maven (mvn) found!"
+        print_error "Please ensure either:"
+        print_error "  1. You're in a Git repository with mvnw in the root, or"
+        print_error "  2. Maven is installed globally and available in PATH"
+        exit 1
+    fi
+}
+
 # Updates all parent version in pom.xml files.
 function updateParentVersions() {
     local version="$1"
 
-    "${MVNW_PATH}" -q build-helper:parse-version versions:set \
+    "${MVN_CMD}" -q build-helper:parse-version versions:set \
         -DnewVersion="${version}" \
         -DprocessFromLocalAggregationRoot=true \
         -DprocessParent=true \
@@ -56,12 +94,12 @@ function updateParentVersions() {
 
 # Prints the project version of the maven module in the current directory.
 function getModuleVersion() {
-    "${MVNW_PATH}" help:evaluate -Dexpression=project.version -q -DforceStdout
+    "${MVN_CMD}" help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
 # Updates the version of a single module, this does not use the global version, only its suffix (build metadata)
 function updateSingleModule() {
-    "${MVNW_PATH}" build-helper:parse-version versions:set \
+    "${MVN_CMD}" build-helper:parse-version versions:set \
         -DnewVersion="\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-${suffix}" \
         -DgenerateBackupPoms=false \
         -DprocessProject=true \
@@ -110,12 +148,36 @@ function printUsage {
             $0 1.2.3
             or
             $0 1.2.3-SNAPSHOT
+
+    The script will automatically detect and use:
+    - Maven wrapper (mvnw) from the repository root if available
+    - Globally installed Maven (mvn) as fallback
+
+    You can force the use of a specific Maven command by setting the FORCE_MVN_CMD environment variable:
+            FORCE_MVN_CMD=mvn $0 1.2.3
+            FORCE_MVN_CMD=/path/to/mvnw $0 1.2.3
 EOF
 }
+
+# Main script starts here
 
 if [[ "$#" -eq 0 ]]; then
     printUsage
     exit 1 # Exit with non-zero status code for usage error
+fi
+
+# Check if user wants to force a specific Maven command
+if [[ -n "${FORCE_MVN_CMD}" ]]; then
+    if command_exists "${FORCE_MVN_CMD}" || [[ -x "${FORCE_MVN_CMD}" ]]; then
+        MVN_CMD="${FORCE_MVN_CMD}"
+        print_success "Using forced Maven command: ${MVN_CMD}"
+    else
+        print_error "Error: Forced Maven command '${FORCE_MVN_CMD}' not found or not executable!"
+        exit 1
+    fi
+else
+    # Initialize Maven command (mvnw or mvn)
+    init_maven_command
 fi
 
 readonly newVersion="$1"
@@ -147,3 +209,5 @@ for module in "${modules[@]}"; do
     updateModule
     popd
 done
+
+print_success "Version update completed successfully!"
