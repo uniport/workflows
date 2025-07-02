@@ -19,7 +19,7 @@ runs:
       shell: bash
       if: ${{ inputs.script == 'true' }}
       run: |
-        ./.github/actions/set-maven-project-version/set-mvn-version.sh ${{ inputs.version }}
+        ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
 
     - name: Set version (mvn plugin, custom settings)
       shell: bash
