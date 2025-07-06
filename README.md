@@ -19,6 +19,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 - [Setup Maven Project Version](./.github/actions/set-maven-project-version)
 - [Validate Version](./.github/actions/validate-version)
 - [Setup Nexus NPM Repository Access](./.github/actions/setup-npm-nexus-access)
+- [Disable man-db triggers](./.github/actions/disable-man-db-triggers)
 
 ## Workflows
 
