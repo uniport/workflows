@@ -25,9 +25,10 @@ runs:
         fi
 
         if [[ -n "${{ inputs.settings-file }}" ]]; then
-          MAVEN_SETTINGS_PATH="$(printf '%q' "${{ inputs.settings-file }}")" ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+          MAVEN_SETTINGS_PATH="${{ inputs.settings-file }}" ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
         else
           ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+        fi
 
     - name: Set version (mvn plugin, custom settings)
       shell: bash
@@ -39,7 +40,7 @@ runs:
         fi
 
         if [[ -n "${{ inputs.settings-file }}" ]]; then
-          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false --settings "$(printf '%q' "${{ inputs.settings-file }}")"
+          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false --settings "${{ inputs.settings-file }}"
         else
           mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
         fi
