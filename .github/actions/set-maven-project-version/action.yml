@@ -19,13 +19,15 @@ runs:
       shell: bash
       if: ${{ inputs.script == 'true' }}
       run: |
-        if [[ -n "${{ inputs.settings-file }}" && ! -f "${{ inputs.settings-file }}" ]]; then
-          echo "Error: Settings file '${{ inputs.settings-file }}' does not exist."
+        SETTINGS_FILE="$(printf '%q' "${{ inputs.settings-file }}")"
+
+        if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
+          echo "Error: Settings file '$SETTINGS_FILE' does not exist."
           exit 1
         fi
 
-        if [[ -n "${{ inputs.settings-file }}" ]]; then
-          MAVEN_SETTINGS_PATH="$(printf '%q' "${{ inputs.settings-file }}")" ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+        if [[ -n "$SETTINGS_FILE" ]]; then
+          MAVEN_SETTINGS_PATH="$SETTINGS_FILE" ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
         else
           ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
         fi
@@ -34,13 +36,15 @@ runs:
       shell: bash
       if: ${{ inputs.script != 'true' }}
       run: |
-        if [[ -n "${{ inputs.settings-file }}" && ! -f "${{ inputs.settings-file }}" ]]; then
-          echo "Error: Settings file '${{ inputs.settings-file }}' does not exist."
+        SETTINGS_FILE="$(printf '%q' "${{ inputs.settings-file }}")"
+
+        if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
+          echo "Error: Settings file '$SETTINGS_FILE' does not exist."
           exit 1
         fi
 
-        if [[ -n "${{ inputs.settings-file }}" ]]; then
-          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false --settings "$(printf '%q' "${{ inputs.settings-file }}")"
+        if [[ -n "$SETTINGS_FILE" ]]; then
+          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
         else
           mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
         fi
