@@ -19,7 +19,15 @@ runs:
       shell: bash
       if: ${{ inputs.script == 'true' }}
       run: |
-        ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+        if [[ -n "${{ inputs.settings-file }}" && ! -f "${{ inputs.settings-file }}" ]]; then
+          echo "Error: Settings file '${{ inputs.settings-file }}' does not exist."
+          exit 1
+        fi
+
+        if [[ -n "${{ inputs.settings-file }}" ]]; then
+          MAVEN_SETTINGS_PATH="$(printf '%q' "${{ inputs.settings-file }}")" ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+        else
+          ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
 
     - name: Set version (mvn plugin, custom settings)
       shell: bash

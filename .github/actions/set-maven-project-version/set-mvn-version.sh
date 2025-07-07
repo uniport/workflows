@@ -8,6 +8,7 @@
 # - in case a module has its version explicitly set (api-graphql, api-kafka, etc.) we don't want to override it but
 #   rather change its suffix (semver pre-release metadata), e.g. replace `-SNAPSHOT` with `-$versionSuffix` where $versionSuffix is a string containing
 #   build metadata.
+# - support custom Maven settings file via MAVEN_SETTINGS_PATH environment variable
 
 set -eCo pipefail
 
@@ -18,6 +19,8 @@ readonly BLUE='\033[0;34m'
 
 # Maven command variable that will be set based on availability
 MVN_CMD=""
+# Maven settings file option
+MVN_SETTINGS=""
 
 function print_info() {
     local msg="$1"
@@ -78,13 +81,24 @@ function init_maven_command() {
         print_error "  2. Maven is installed globally and available in PATH"
         exit 1
     fi
+
+    # Check for custom Maven settings file
+    if [[ -n "${MAVEN_SETTINGS_PATH}" ]]; then
+        if [[ -f "${MAVEN_SETTINGS_PATH}" ]]; then
+            MVN_SETTINGS="-s ${MAVEN_SETTINGS_PATH}"
+            print_success "Using custom Maven settings file: ${MAVEN_SETTINGS_PATH}"
+        else
+            print_error "Error: Specified Maven settings file '${MAVEN_SETTINGS_PATH}' not found!"
+            exit 1
+        fi
+    fi
 }
 
 # Updates all parent version in pom.xml files.
 function updateParentVersions() {
     local version="$1"
 
-    "${MVN_CMD}" -q build-helper:parse-version versions:set \
+    "${MVN_CMD}" ${MVN_SETTINGS} -q build-helper:parse-version versions:set \
         -DnewVersion="${version}" \
         -DprocessFromLocalAggregationRoot=true \
         -DprocessParent=true \
@@ -94,12 +108,12 @@ function updateParentVersions() {
 
 # Prints the project version of the maven module in the current directory.
 function getModuleVersion() {
-    "${MVN_CMD}" help:evaluate -Dexpression=project.version -q -DforceStdout
+    "${MVN_CMD}" ${MVN_SETTINGS} help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
 # Updates the version of a single module, this does not use the global version, only its suffix (build metadata)
 function updateSingleModule() {
-    "${MVN_CMD}" build-helper:parse-version versions:set \
+    "${MVN_CMD}" ${MVN_SETTINGS} build-helper:parse-version versions:set \
         -DnewVersion="\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-${suffix}" \
         -DgenerateBackupPoms=false \
         -DprocessProject=true \
@@ -152,10 +166,14 @@ function printUsage {
     The script will automatically detect and use:
     - Maven wrapper (mvnw) from the repository root if available
     - Globally installed Maven (mvn) as fallback
+    - Custom Maven settings file if MAVEN_SETTINGS_PATH environment variable is set
 
     You can force the use of a specific Maven command by setting the FORCE_MVN_CMD environment variable:
             FORCE_MVN_CMD=mvn $0 1.2.3
             FORCE_MVN_CMD=/path/to/mvnw $0 1.2.3
+
+    You can specify a custom Maven settings file:
+            MAVEN_SETTINGS_PATH=/path/to/settings.xml $0 1.2.3
 EOF
 }
 
@@ -176,7 +194,7 @@ if [[ -n "${FORCE_MVN_CMD}" ]]; then
         exit 1
     fi
 else
-    # Initialize Maven command (mvnw or mvn)
+    # Initialize Maven command (mvnw or mvn) and settings
     init_maven_command
 fi
 
