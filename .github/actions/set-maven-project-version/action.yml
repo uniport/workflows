@@ -19,7 +19,7 @@ runs:
       shell: bash
       if: ${{ inputs.script == 'true' }}
       run: |
-        SETTINGS_FILE="$(printf '%q' "${{ inputs.settings-file }}")"
+        SETTINGS_FILE=$(echo "${{ inputs.settings-file }}" | tr -d '[:space:]')
 
         if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
           echo "Error: Settings file '$SETTINGS_FILE' does not exist."
@@ -36,7 +36,7 @@ runs:
       shell: bash
       if: ${{ inputs.script != 'true' }}
       run: |
-        SETTINGS_FILE="$(printf '%q' "${{ inputs.settings-file }}")"
+        SETTINGS_FILE=$(echo "${{ inputs.settings-file }}" | tr -d '[:space:]')
 
         if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
           echo "Error: Settings file '$SETTINGS_FILE' does not exist."
