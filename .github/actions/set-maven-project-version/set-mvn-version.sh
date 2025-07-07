@@ -10,7 +10,7 @@
 #   build metadata.
 # - support custom Maven settings file via MAVEN_SETTINGS_PATH environment variable
 
-set -eCo pipefail
+set -eCox pipefail
 
 readonly NO_COLOR='\033[0m'
 readonly RED='\033[0;31m'
