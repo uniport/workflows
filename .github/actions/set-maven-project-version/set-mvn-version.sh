@@ -59,13 +59,7 @@ function init_maven_command() {
             mvnw_found=true
             print_info "Found Maven wrapper at: ${MVNW_PATH}"
         fi
-    else
-        print_error "Error: Could not determine repository root. Ensure the script is run in a Git repository."
-        exit 1
     fi
-
-    # Change to the repository root to ensure consistent path resolution
-    cd "${REPO_ROOT}"
 
     # Check for globally installed mvn
     if command_exists mvn; then
@@ -90,11 +84,6 @@ function init_maven_command() {
 
     # Check for custom Maven settings file
     if [[ -n "${MAVEN_SETTINGS_PATH}" ]]; then
-        # Resolve relative paths against REPO_ROOT
-        if [[ "${MAVEN_SETTINGS_PATH}" != /* ]]; then
-            MAVEN_SETTINGS_PATH="${REPO_ROOT}/${MAVEN_SETTINGS_PATH}"
-        fi
-        print_info "Resolved MAVEN_SETTINGS_PATH: ${MAVEN_SETTINGS_PATH}"
         if [[ -f "${MAVEN_SETTINGS_PATH}" ]]; then
             MVN_SETTINGS="-s ${MAVEN_SETTINGS_PATH}"
             print_success "Using custom Maven settings file: ${MAVEN_SETTINGS_PATH}"
