@@ -98,7 +98,7 @@ function init_maven_command() {
 function updateParentVersions() {
     local version="$1"
 
-    "${MVN_CMD}" ${MVN_SETTINGS} -q build-helper:parse-version versions:set \
+    "${MVN_CMD}" "${MVN_SETTINGS}" -q build-helper:parse-version versions:set \
         -DnewVersion="${version}" \
         -DprocessFromLocalAggregationRoot=true \
         -DprocessParent=true \
@@ -108,12 +108,12 @@ function updateParentVersions() {
 
 # Prints the project version of the maven module in the current directory.
 function getModuleVersion() {
-    "${MVN_CMD}" ${MVN_SETTINGS} help:evaluate -Dexpression=project.version -q -DforceStdout
+    "${MVN_CMD}" "${MVN_SETTINGS}" help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
 # Updates the version of a single module, this does not use the global version, only its suffix (build metadata)
 function updateSingleModule() {
-    "${MVN_CMD}" ${MVN_SETTINGS} build-helper:parse-version versions:set \
+    "${MVN_CMD}" "${MVN_SETTINGS}" build-helper:parse-version versions:set \
         -DnewVersion="\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-${suffix}" \
         -DgenerateBackupPoms=false \
         -DprocessProject=true \
