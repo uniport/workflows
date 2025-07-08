@@ -1,6 +1,10 @@
 name: 'Setup Java'
 description: 'Sets up Java'
 inputs:
+  distribution:
+    description: 'Java distribution'
+    required: true
+    default: 'temurin'
   java-version:
     description: 'Java version'
     required: true
@@ -19,7 +23,7 @@ runs:
   steps:
     - uses: actions/setup-java@v4
       with:
-        distribution: 'temurin'
+        distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}
         settings-path: ${{ inputs.settings-path }}
         overwrite-settings: false
