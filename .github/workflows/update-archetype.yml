@@ -68,6 +68,7 @@ jobs:
 
       - name: Configure Git user
         run: |
+          cd archetype-repo
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
