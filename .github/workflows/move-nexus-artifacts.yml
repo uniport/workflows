@@ -1,0 +1,137 @@
+# Workflow for moving nexus artifacts associated with a tag
+name: Move Artifacts
+
+on:
+  workflow_call:
+    secrets:
+      NEXUS3_PW:
+        required: true
+    inputs:
+      version:
+        description: "The version string"
+        required: true
+        type: string
+      move_maven:
+        description: "Enable or disable moving of maven artifacts"
+        type: boolean
+        required: false
+        default: false
+      move_docker_helm:
+        description: "Enable or disable moving of Docker images & helm charts"
+        type: boolean
+        required: false
+        default: false
+      move_npm:
+        description: "Enable or disable moving of NPM artifacts"
+        type: boolean
+        required: false
+        default: false
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The version string"
+        required: true
+        type: string
+      move_maven:
+        description: "Enable or disable moving of maven artifacts"
+        type: boolean
+        required: false
+        default: false
+      move_docker_helm:
+        description: "Enable or disable moving of Docker images & helm charts"
+        type: boolean
+        required: false
+        default: false
+      move_npm:
+        description: "Enable or disable moving of NPM artifacts"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      TAG_NAME_DOCKER_HELM: ${{ steps.variables.outputs.TAG_NAME_DOCKER_HELM }}
+      TAG_NAME_MAVEN: ${{ steps.variables.outputs.TAG_NAME_MAVEN }}
+      TAG_NAME_NPM: ${{ steps.variables.outputs.TAG_NAME_NPM }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Fetch only the latest commit
+
+      - name: Read Project Properties
+        id: properties
+        uses: uniport/workflows/.github/actions/setup-maven-build-variables@main
+
+      - name: Setup Variables
+        id: variables
+        env:
+          TAG_NAME_SUFFIX_DOCKER_HELM: ${{ vars.TAG_NAME_SUFFIX_DOCKER }}
+          TAG_NAME_SUFFIX_MAVEN: ${{ vars.TAG_NAME_SUFFIX_MAVEN }}
+          TAG_NAME_SUFFIX_NPM: ${{ vars.TAG_NAME_SUFFIX_NPM }}
+        shell: bash
+        run: |
+          set -u
+
+          TAG_NAME="${{ steps.properties.outputs.GROUP_ID }}-${{ inputs.version }}"
+
+          TAG_NAME_DOCKER_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_DOCKER_HELM }}"
+          TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}"
+          TAG_NAME_NPM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_NPM }}"
+
+          echo "TAG_NAME_DOCKER_HELM=$TAG_NAME_DOCKER_HELM" >> $GITHUB_OUTPUT
+          echo "TAG_NAME_MAVEN=$TAG_NAME_MAVEN" >> $GITHUB_OUTPUT
+          echo "TAG_NAME_NPM=$TAG_NAME_NPM" >> $GITHUB_OUTPUT
+
+      - name: Summary
+        shell: bash
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          ## Setup
+          ### Inputs
+          - **version**: \`${{ inputs.version }}\`
+          - **move_maven**: \`${{ inputs.move_maven }}\`
+          - **move_docker_helm**: \`${{ inputs.move_docker_helm }}\`
+          - **move_npm**: \`${{ inputs.move_npm }}\`
+          ### Outputs
+          - **TAG_NAME_DOCKER_HELM**: \`${{ steps.variables.outputs.TAG_NAME_DOCKER_HELM }}\`
+          - **TAG_NAME_MAVEN**: \`${{ steps.variables.outputs.TAG_NAME_MAVEN }}\`
+          - **TAG_NAME_NPM**: \`${{ steps.variables.outputs.TAG_NAME_NPM }}\`
+          EOF
+
+  move_mvn:
+    name: Move maven artifacts
+    if: ${{ inputs.move_maven}}
+    needs: [setup]
+    uses: ./.github/workflows/nexus-artifacts-move.yml
+    with:
+      tag: ${{ needs.setup.outputs.TAG_NAME_MAVEN }}
+      target_repository: ${{ vars.RELEASE_REPO_MAVEN }}
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  move_npm:
+    name: Move NPM artifacts
+    if: ${{ inputs.move_npm}}
+    needs: [setup]
+    uses: ./.github/workflows/nexus-artifacts-move.yml
+    with:
+      tag: ${{ needs.setup.outputs.TAG_NAME_NPM }}
+      target_repository: ${{ vars.RELEASE_REPO_NPM }}
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  move_docker_helm:
+    name: Move docker images & helm charts
+    if: ${{ inputs.move_docker_helm}}
+    needs: [setup]
+    uses: ./.github/workflows/docker-images-move.yml
+    with:
+      tag: ${{ needs.setup.outputs.TAG_NAME_NPM }}
+      source_registry: ${{ vars.STAGING_REGISTRY_DOCKER }}
+      target_registry: ${{ vars.RELEASE_REGISTRY_DOCKER }}
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}

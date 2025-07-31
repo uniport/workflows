@@ -1,0 +1,59 @@
+# Workflow for creating a git tag
+name: Git Tag
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: "The tag name"
+        type: string
+        required: true
+      tag_message:
+        description: "The tag message"
+        type: string
+        required: true
+      commit_sha:
+        description: "The commit SHA to create the tag on"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "The tag name"
+        type: string
+        required: true
+      tag_message:
+        description: "The tag message"
+        type: string
+        required: true
+      commit_sha:
+        description: "The commit SHA to create the tag on"
+        type: string
+        required: true
+
+jobs:
+  tag:
+    name: Create Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Fetch only the latest commit
+
+      - name: Configure Git user
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Create Git Tag
+        shell: bash
+        run: |
+          echo "Running on branch: $(git rev-parse --abbrev-ref HEAD)""
+
+          git tag \
+            --annotate "${{ inputs.tag_name }}" \
+            --message "${{ inputs.tag_message }}" \
+            "${{inputs.commit_sha }}"
+
+          git push --tags

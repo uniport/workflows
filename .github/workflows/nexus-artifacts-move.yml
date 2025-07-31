@@ -1,0 +1,43 @@
+# Workflow for moving nexus artifacts associated with a tag
+name: Nexus Artifacts Move
+
+on:
+  workflow_call:
+    secrets:
+      NEXUS3_PW:
+        required: true
+    inputs:
+      tag:
+        description: "The tag name associated with artifacts to move"
+        type: string
+        required: true
+      target_repository:
+        description: "The target repository to move the artifacts to"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag name associated with artifacts to move"
+        type: string
+        required: true
+      target_repository:
+        description: "The target repository to move the artifacts to"
+        type: string
+        required: true
+
+env:
+  NEXUS3_URL: ${{ vars.NEXUS3_URL }}
+  NEXUS3_USER: ${{ vars.NEXUS3_USER }}
+
+jobs:
+  move:
+    name: Artifacts Move
+    runs-on: ubuntu-latest
+    steps:
+      # https://help.sonatype.com/en/staging.html
+      - name: Move artifacts
+        run: |
+          curl --fail --silent --show-error -X POST \
+            --user "${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}" \
+            ${{ env.NEXUS3_URL }}/service/rest/v1/staging/move/${{ inputs.target_repository }}?tag=\\"${{ inputs.tag }}\\"

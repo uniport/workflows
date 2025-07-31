@@ -1,3 +1,4 @@
+# Workflow for staging (tagging + associating) artifacts of various types (Docker, Helm, Maven, NPM) in Nexus
 name: Tag Artifacts
 
 on:

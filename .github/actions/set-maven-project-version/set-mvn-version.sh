@@ -6,7 +6,7 @@
 # For all maven modules/pom files we want:
 # - update the parent version
 # - in case a module has its version explicitly set (api-graphql, api-kafka, etc.) we don't want to override it but
-#   rather change its suffix (semver pre-release metadata), e.g. replace `-SNAPSHOT` with `-$versionSuffix` where $versionSuffix is a string containing
+#   rather change its suffix (SemVer pre-release metadata), e.g. replace `-SNAPSHOT` with `-$versionSuffix` where $versionSuffix is a string containing
 #   build metadata.
 # - support custom Maven settings file via MAVEN_SETTINGS_PATH environment variable
 
@@ -109,7 +109,7 @@ function init_maven_command() {
 function updateParentVersions() {
     local version="$1"
 
-    "${MVN_CMD}" ${MVN_SETTINGS} -B -q build-helper:parse-version versions:set \
+    "${MVN_CMD}" "${MVN_SETTINGS}" -B -q build-helper:parse-version versions:set \
         -DnewVersion="${version}" \
         -DprocessFromLocalAggregationRoot=true \
         -DprocessParent=true \
@@ -119,12 +119,12 @@ function updateParentVersions() {
 
 # Prints the project version of the maven module in the current directory.
 function getModuleVersion() {
-    "${MVN_CMD}" ${MVN_SETTINGS} -B help:evaluate -Dexpression=project.version -q -DforceStdout
+    "${MVN_CMD}" "${MVN_SETTINGS}" -B help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
 # Updates the version of a single module, this does not use the global version, only its suffix (build metadata)
 function updateSingleModule() {
-    "${MVN_CMD}" ${MVN_SETTINGS} -B build-helper:parse-version versions:set \
+    "${MVN_CMD}" "${MVN_SETTINGS}" -B build-helper:parse-version versions:set \
         -DnewVersion="\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-${suffix}" \
         -DgenerateBackupPoms=false \
         -DprocessProject=true \
@@ -147,7 +147,7 @@ function updateModule() {
         print_info "Module has same version as project/parent - skipping version update"
     fi
 
-    local subModules=($(getModules))
+    mapfile -t subModules < <(getModules)
 
     if [[ "${#subModules[@]}" -gt 0 ]]; then
         print_info "Module has submodules:"
@@ -221,7 +221,7 @@ readonly PROJECT_VERSION
 
 print_info "Found project version: ${PROJECT_VERSION}"
 
-modules=($(getModules))
+mapfile -t modules < <(getModules)
 
 if [[ "${#modules[@]}" -eq 0 ]]; then
     print_success "This project has no modules - skipping version update for modules"

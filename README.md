@@ -12,29 +12,39 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 > [!TIP]
 > Composite actions available in this repository.
 
+- [Abort if there is uncommitted code](./.github/actions/check-uncommitted-code)
 - [Add Helm repositories](./.github/actions/add-helm-repositories)
-- [Setup Java](./.github/actions/setup-java)
-- [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
-- [Setup Node.JS and NPM dependencies](./.github/actions/setup-node-and-dependencies)
-- [Setup Maven Project Version](./.github/actions/set-maven-project-version)
-- [Validate Version](./.github/actions/validate-version)
-- [Setup Nexus NPM Repository Access](./.github/actions/setup-npm-nexus-access)
 - [Disable man-db triggers](./.github/actions/disable-man-db-triggers)
+- [Ensures a branch exists and aborts otherwise](./.github/actions/ensure-branch)
+- [Parses the package version](./.github/actions/parse-version)
+- [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
+- [Setup Java](./.github/actions/setup-java)
+- [Setup Maven Build Variables](./.github/actions/setup-maven-build-variables)
+- [Setup Maven Project Version](./.github/actions/set-maven-project-version)
+- [Setup Nexus NPM Repository Access](./.github/actions/setup-npm-nexus-access)
+- [Setup Node.JS and NPM dependencies](./.github/actions/setup-node-and-dependencies)
+- [Validate Version](./.github/actions/validate-version)
 
 ## Workflows
 
 > [!TIP]
 > Reusable workflows available in this repository.
 
-- [NPM Lint](./.github/workflows/npm-lint.yml) - Runs NPM the `lint` command defined in `package.json` to ensure code quality and adherence to coding standards.
-- [Setup Maven Build Variables](./.github/workflows/setup-maven-build-variables.yml) - Wrapper around the [`setup-maven-build-variables` action](./.github/actions/setup-maven-build-variables) that maps all outputs to the workflow to it can also be used as a reusable workflow as opposed to just a composite action.
-- [Deploy DEV](./.github/workflows/deploy-dev.yml) - Workflow for deploying a component version to the DEV environment
-- [Update Archetype](./.github/workflows/update-archetype.yml) - Workflow for updating a component version in the Uniport Archetype
-- [Nexus Tag Create](./.github/workflows/nexus-tag-create.yml) - Workflow for creating a Nexus tag
-- [Nexus Tag Associate](./.github/workflows/nexus-tag-associate.yml) - Workflow for associating components that belong to a Nexus tag
-- [Nexus Tag Create](./.github/workflows/nexus-tag-search.yml) - Workflow for searching components that belong to a Nexus tag
-- [Nexus Tag Create](./.github/workflows/nexus-tag-search.yml) - Workflow for searching components that belong to a Nexus tag
-- [Tag Nexus Artifacts](./.github/workflows/nexus-tag-search.yml) - Workflow for staging (tagging + associating) artifacts of various types (Docker, Helm, Maven, NPM) in Nexus
+- [Archetype Update](./.github/workflows/update-archetype.yml)
+- [Changelog Update](./.github/workflows/changelog-update.yml)
+- [Deploy DEV](./.github/workflows/deploy-dev.yml)
+- [Docker Images Move](./.github/workflows/docker-images-move.yml)
+- [Git Patch Branch Create](./.github/workflows/git-parch-branch-create.yml)
+- [Git Tag Create](./.github/workflows/git-tag.yml)
+- [Jira Release](./.github/workflows/jira-release.yml)
+- [NPM Lint](./.github/workflows/npm-lint.yml)
+- [Nexus Artifacts Move](./.github/workflows/move-nexus-artifacts.yml)
+- [Nexus Tag Associate](./.github/workflows/nexus-tag-associate.yml)
+- [Nexus Tag Create](./.github/workflows/nexus-tag-create.yml)
+- [Nexus Tag Search](./.github/workflows/nexus-tag-search.yml)
+- [Setup Maven Build Variables](./.github/workflows/setup-maven-build-variables.yml)
+- [Tag Nexus Artifacts](./.github/workflows/nexus-tag-search.yml)
+- [Version Bump](./.github/workflows/version-bump.yml)
 
 ## Workflows vs. Actions
 

@@ -1,3 +1,4 @@
+# Runs NPM the `lint` command defined in `package.json` to ensure code quality and adherence to coding standards.
 name: NPM Lint
 
 on:

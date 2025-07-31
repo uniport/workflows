@@ -1,0 +1,57 @@
+# Workflow for moving docker images in Nexus3 (multi-arch)
+name: Docker Images Move
+
+on:
+  workflow_call:
+    secrets:
+      NEXUS3_PW:
+        required: true
+    inputs:
+      tag:
+        description: "The tag name associated with docker images to move"
+        type: string
+        required: true
+      source_registry:
+        description: "The source registry to move the docker images from"
+        type: string
+        required: true
+      target_registry:
+        description: "The target registry to move the docker images to"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag name associated with docker images to move"
+        type: string
+        required: true
+      source_registry:
+        description: "The source registry to move the docker images from"
+        type: string
+        required: true
+      target_registry:
+        description: "The target registry to move the docker images to"
+        type: string
+        required: true
+
+env:
+  NEXUS3_URL: ${{ vars.NEXUS3_URL }}
+  NEXUS3_USER: ${{ vars.NEXUS3_USER }}
+  SCRIPTS_DIR: .github/scripts
+
+jobs:
+  move:
+    name: Docker Images Move
+    runs-on: ubuntu-latest
+    steps:
+      # https://help.sonatype.com/en/staging.html
+      - name: Move docker images
+        run: |
+          docker run --rm -t \
+            -v ${{ env.SCRIPTS_DIR }}:/tmp \
+            -e NEXUS_USER="${{ env.NEXUS3_USER }}" \
+            -e NEXUS_PW="${{ secrets.NEXUS3_PW }}" \
+            -e NEXUS3_URL="${{ env.NEXUS3_URL }}"
+            -e DOCKER_STAGING_REGISTRY="${{ inputs.source_registry }}" \
+            -e DOCKER_RELEASE_REGISTRY="${{ inputs.target_registry }}" \
+            peschee/zx:2.0.0 /tmp/release-nexus-tag.mjs "${{ inputs.tag }}" --quiet

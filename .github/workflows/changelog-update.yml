@@ -1,0 +1,59 @@
+# Workflow for updating the Changelog file
+name: Changelog Update
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "The version e.g. 9.5.1-202507150815-191-270e262"
+        type: string
+        required: true
+      branch_name:
+        description: "The branch name"
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The version e.g. 9.5.1-202507150815-191-270e262"
+        type: string
+        required: true
+      branch_name:
+        description: "The branch name"
+        type: string
+        required: true
+
+env:
+  CHANGELOG_FILE_NAME: CHANGELOG.md
+  SCRIPTS_DIR: .github/scripts
+
+jobs:
+  move:
+    name: Changelog Update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version format
+        uses: uniport/workflows/.github/actions/validate-version@main
+        with:
+          version: ${{ inputs.version }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1 # Fetch only the latest commit
+
+      - name: Configure Git user
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Update Changelog
+        shell: bash
+        run: |
+          ${{ env.SCRIPTS_DIR }}/updateChangelog.sh "${{ inputs.version }}"
+
+          git add ${{ env.CHANGELOG_FILE_NAME }}
+          git commit \
+              --no-verify \
+              --message "Update changelog with new version and prepare next unreleased version"
+          git push --set-upstream origin ${{ inputs.branch_name }}
