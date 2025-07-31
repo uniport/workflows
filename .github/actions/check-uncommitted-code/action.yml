@@ -6,4 +6,4 @@ runs:
   steps:
     - name: Check uncommitted code
       shell: bash
-      run: ./.github/scripts/check_clean_working_directory.sh
+      run: ${{ github.action_path }}/check_clean_working_directory.sh
