@@ -1,0 +1,9 @@
+name: Check uncommitted code
+description: Checks if there is uncommitted code in the working directory
+
+runs:
+  using: composite
+  steps:
+    - name: Check uncommitted code
+      shell: bash
+      run: ./.github/scripts/check_clean_working_directory.sh
