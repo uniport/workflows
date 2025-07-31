@@ -42,6 +42,11 @@ jobs:
   register:
     runs-on: ubuntu-latest
     steps:
+      - name: Validate version format
+        uses: uniport/workflows/.github/actions/validate-version@main
+        with:
+          version: ${{ inputs.version }}
+
       # Generate a token for the Uniport GitHub App
       - name: Generate GitHub App Token
         uses: actions/create-github-app-token@v2
@@ -53,12 +58,13 @@ jobs:
           repositories: |
             archetype-inventage-portal-solution
 
-      - name: Checkout archetype
+      - name: Checkout archetype repo
         uses: actions/checkout@v4
         with:
           repository: uniport/archetype-inventage-portal-solution
           token: ${{ steps.app-token.outputs.token }}
           ref: master
+          path: archetype-repo
 
       - name: Configure Git user
         run: |
@@ -67,5 +73,6 @@ jobs:
 
       - name: Register version
         run: |
+          cd archetype-repo
           ./registerVersion.sh ${{ inputs.command }} "${{ inputs.component_name }}" ${{ inputs.version }}
           git push origin master

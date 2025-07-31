@@ -62,7 +62,7 @@ jobs:
           repositories: |
             uniport-deployment
 
-      - name: Checkout other repository
+      - name: Checkout deployment repo
         uses: actions/checkout@v4
         with:
           repository: uniport/uniport-deployment
