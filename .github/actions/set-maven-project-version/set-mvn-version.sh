@@ -96,7 +96,7 @@ function init_maven_command() {
         fi
         print_info "Resolved MAVEN_SETTINGS_PATH: ${MAVEN_SETTINGS_PATH}"
         if [[ -f "${MAVEN_SETTINGS_PATH}" ]]; then
-            MVN_SETTINGS="-s ${MAVEN_SETTINGS_PATH}"
+            MVN_SETTINGS="--settings ${MAVEN_SETTINGS_PATH}"
             print_success "Using custom Maven settings file: ${MAVEN_SETTINGS_PATH}"
         else
             print_error "Error: Specified Maven settings file '${MAVEN_SETTINGS_PATH}' not found!"
@@ -109,7 +109,8 @@ function init_maven_command() {
 function updateParentVersions() {
     local version="$1"
 
-    "${MVN_CMD}" "${MVN_SETTINGS}" -B -q build-helper:parse-version versions:set \
+    # shellcheck disable=SC2086
+    "${MVN_CMD}" ${MVN_SETTINGS} -B -q build-helper:parse-version versions:set \
         -DnewVersion="${version}" \
         -DprocessFromLocalAggregationRoot=true \
         -DprocessParent=true \
@@ -119,12 +120,14 @@ function updateParentVersions() {
 
 # Prints the project version of the maven module in the current directory.
 function getModuleVersion() {
-    "${MVN_CMD}" "${MVN_SETTINGS}" -B help:evaluate -Dexpression=project.version -q -DforceStdout
+    # shellcheck disable=SC2086
+    "${MVN_CMD}" ${MVN_SETTINGS} -B help:evaluate -Dexpression=project.version -q -DforceStdout
 }
 
 # Updates the version of a single module, this does not use the global version, only its suffix (build metadata)
 function updateSingleModule() {
-    "${MVN_CMD}" "${MVN_SETTINGS}" -B build-helper:parse-version versions:set \
+    # shellcheck disable=SC2086
+    "${MVN_CMD}" ${MVN_SETTINGS} -B build-helper:parse-version versions:set \
         -DnewVersion="\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-${suffix}" \
         -DgenerateBackupPoms=false \
         -DprocessProject=true \
