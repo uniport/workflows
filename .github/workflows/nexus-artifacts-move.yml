@@ -8,21 +8,21 @@ on:
         required: true
     inputs:
       tag:
-        description: "The tag name associated with artifacts to move"
+        description: 'The tag name associated with artifacts to move'
         type: string
         required: true
       target_repository:
-        description: "The target repository to move the artifacts to"
+        description: 'The target repository to move the artifacts to'
         type: string
         required: true
   workflow_dispatch:
     inputs:
       tag:
-        description: "The tag name associated with artifacts to move"
+        description: 'The tag name associated with artifacts to move'
         type: string
         required: true
       target_repository:
-        description: "The target repository to move the artifacts to"
+        description: 'The target repository to move the artifacts to'
         type: string
         required: true
 

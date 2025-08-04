@@ -8,29 +8,29 @@ on:
         required: true
     inputs:
       tag:
-        description: "The tag name associated with docker images to move"
+        description: 'The tag name associated with docker images to move'
         type: string
         required: true
       source_registry:
-        description: "The source registry to move the docker images from"
+        description: 'The source registry to move the docker images from'
         type: string
         required: true
       target_registry:
-        description: "The target registry to move the docker images to"
+        description: 'The target registry to move the docker images to'
         type: string
         required: true
   workflow_dispatch:
     inputs:
       tag:
-        description: "The tag name associated with docker images to move"
+        description: 'The tag name associated with docker images to move'
         type: string
         required: true
       source_registry:
-        description: "The source registry to move the docker images from"
+        description: 'The source registry to move the docker images from'
         type: string
         required: true
       target_registry:
-        description: "The target registry to move the docker images to"
+        description: 'The target registry to move the docker images to'
         type: string
         required: true
 

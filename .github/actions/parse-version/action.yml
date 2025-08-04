@@ -3,7 +3,7 @@ description: Parses a version string against the format semver-date-build_number
 
 inputs:
   version:
-    description: "Version string to parse (e.g., 9.5.0-202504221620-1321-d65d211b)"
+    description: 'Version string to parse (e.g., 9.5.0-202504221620-1321-d65d211b)'
     required: true
 
 outputs:

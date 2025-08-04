@@ -3,7 +3,7 @@ description: Checks if a branch exists in the repo and aborts otherwise
 
 inputs:
   branch:
-    description: "Branch name to check"
+    description: 'Branch name to check'
     required: true
 
 runs:

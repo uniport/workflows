@@ -5,29 +5,29 @@ on:
   workflow_call:
     inputs:
       tag_name:
-        description: "The tag name"
+        description: 'The tag name'
         type: string
         required: true
       tag_message:
-        description: "The tag message"
+        description: 'The tag message'
         type: string
         required: true
       commit_sha:
-        description: "The commit SHA to create the tag on"
+        description: 'The commit SHA to create the tag on'
         type: string
         required: true
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "The tag name"
+        description: 'The tag name'
         type: string
         required: true
       tag_message:
-        description: "The tag message"
+        description: 'The tag message'
         type: string
         required: true
       commit_sha:
-        description: "The commit SHA to create the tag on"
+        description: 'The commit SHA to create the tag on'
         type: string
         required: true
 

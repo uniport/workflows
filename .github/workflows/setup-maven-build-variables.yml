@@ -1,4 +1,4 @@
-# Wrapper around the setup-maven-build-variables that maps all outputs to the workflow 
+# Wrapper around the setup-maven-build-variables that maps all outputs to the workflow
 # so it can also be used as a reusable workflow as opposed to just a composite action.
 name: Setup Maven Build Variables
 

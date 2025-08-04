@@ -5,29 +5,29 @@ on:
   workflow_call:
     inputs:
       major:
-        description: "The major version in SemVer"
+        description: 'The major version in SemVer'
         type: string
         required: true
       minor:
-        description: "The minor version in SemVer"
+        description: 'The minor version in SemVer'
         type: string
         required: true
       patch:
-        description: "The patch version in SemVer"
+        description: 'The patch version in SemVer'
         type: string
         required: true
   workflow_dispatch:
     inputs:
       major:
-        description: "The major version in SemVer"
+        description: 'The major version in SemVer'
         type: string
         required: true
       minor:
-        description: "The minor version in SemVer"
+        description: 'The minor version in SemVer'
         type: string
         required: true
       patch:
-        description: "The patch version in SemVer"
+        description: 'The patch version in SemVer'
         type: string
         required: true
 

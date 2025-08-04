@@ -1,18 +1,18 @@
 name: Send Rocket.Chat Message
-description: "Sends a Rocket.Chat Message via Webhook"
+description: 'Sends a Rocket.Chat Message via Webhook'
 inputs:
   webhook_url:
-    description: "The Rocket.Chat webhook URL"
+    description: 'The Rocket.Chat webhook URL'
     required: true
   channel:
-    description: "The channel to send the message to (optional)"
+    description: 'The channel to send the message to (optional)'
     required: false
   message:
-    description: "The message to send"
+    description: 'The message to send'
     required: true
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     # No need to install Node as it is available on all GitHub runners…
     - name: Send Rocket.Chat message

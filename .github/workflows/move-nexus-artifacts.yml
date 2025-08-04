@@ -8,42 +8,42 @@ on:
         required: true
     inputs:
       version:
-        description: "The version string"
+        description: 'The version string'
         required: true
         type: string
       move_maven:
-        description: "Enable or disable moving of maven artifacts"
+        description: 'Enable or disable moving of maven artifacts'
         type: boolean
         required: false
         default: false
       move_docker_helm:
-        description: "Enable or disable moving of Docker images & helm charts"
+        description: 'Enable or disable moving of Docker images & helm charts'
         type: boolean
         required: false
         default: false
       move_npm:
-        description: "Enable or disable moving of NPM artifacts"
+        description: 'Enable or disable moving of NPM artifacts'
         type: boolean
         required: false
         default: false
   workflow_dispatch:
     inputs:
       version:
-        description: "The version string"
+        description: 'The version string'
         required: true
         type: string
       move_maven:
-        description: "Enable or disable moving of maven artifacts"
+        description: 'Enable or disable moving of maven artifacts'
         type: boolean
         required: false
         default: false
       move_docker_helm:
-        description: "Enable or disable moving of Docker images & helm charts"
+        description: 'Enable or disable moving of Docker images & helm charts'
         type: boolean
         required: false
         default: false
       move_npm:
-        description: "Enable or disable moving of NPM artifacts"
+        description: 'Enable or disable moving of NPM artifacts'
         type: boolean
         required: false
         default: false

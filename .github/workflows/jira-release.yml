@@ -5,29 +5,29 @@ on:
   workflow_call:
     inputs:
       version:
-        description: "The version e.g. 9.5.1-202507150815-191-270e262"
+        description: 'The version e.g. 9.5.1-202507150815-191-270e262'
         type: string
         required: true
       semver:
-        description: "The SemVer e.g. 9.5.1"
+        description: 'The SemVer e.g. 9.5.1'
         type: string
         required: true
       component_name:
-        description: "The component name to release"
+        description: 'The component name to release'
         type: string
         required: true
   workflow_dispatch:
     inputs:
       version:
-        description: "The version e.g. 9.5.1-202507150815-191-270e262"
+        description: 'The version e.g. 9.5.1-202507150815-191-270e262'
         type: string
         required: true
       semver:
-        description: "The SemVer e.g. 9.5.1"
+        description: 'The SemVer e.g. 9.5.1'
         type: string
         required: true
       component_name:
-        description: "The component name to release"
+        description: 'The component name to release'
         type: string
         required: true
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: Release Jira
         env:
-          JIRA_BASIC_AUTH_TOKEN: "${{ steps.setup.outputs.JIRA_BASIC_AUTH_TOKEN }}"
+          JIRA_BASIC_AUTH_TOKEN: '${{ steps.setup.outputs.JIRA_BASIC_AUTH_TOKEN }}'
         shell: bash
         run: |
           ${{ env.SCRIPTS_DIR }}/jiraRelease.sh "${{ inputs.component_name }}" "${{ inputs.semver }}" "${{ inputs.version }}"
