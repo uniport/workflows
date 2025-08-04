@@ -135,7 +135,7 @@ function updateSingleModule() {
 }
 
 function getModules() {
-    sed -n '/^ *<module>/s/^ *<module>\(.*\)<\/module>/\1/p' pom.xml | xargs
+    sed -n '/^ *<module>/s/^ *<module>\(.*\)<\/module>/\1/p' pom.xml
 }
 
 function updateModule() {
