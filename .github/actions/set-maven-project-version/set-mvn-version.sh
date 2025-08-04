@@ -150,7 +150,8 @@ function updateModule() {
         print_info "Module has same version as project/parent - skipping version update"
     fi
 
-    mapfile -t subModules < <(getModules)
+    subModules=()
+    while IFS='' read -r line; do subModules+=("$line"); done < <(getModules)
 
     if [[ "${#subModules[@]}" -gt 0 ]]; then
         print_info "Module has submodules:"
@@ -224,7 +225,8 @@ readonly PROJECT_VERSION
 
 print_info "Found project version: ${PROJECT_VERSION}"
 
-mapfile -t modules < <(getModules)
+modules=()
+while IFS='' read -r line; do modules+=("$line"); done < <(getModules)
 
 if [[ "${#modules[@]}" -eq 0 ]]; then
     print_success "This project has no modules - skipping version update for modules"
