@@ -35,6 +35,8 @@ jobs:
   create:
     name: Patch Branch Create
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create git tag
     steps:
       - name: Setup
         id: setup

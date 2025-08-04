@@ -49,7 +49,7 @@ jobs:
       - name: Create Git Tag
         shell: bash
         run: |
-          echo "Running on branch: $(git rev-parse --abbrev-ref HEAD)""
+          echo "Running on branch: $(git rev-parse --abbrev-ref HEAD)"
 
           git tag \
             --annotate "${{ inputs.tag_name }}" \

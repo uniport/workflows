@@ -40,4 +40,4 @@ jobs:
         run: |
           curl --fail --silent --show-error -X POST \
             --user "${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}" \
-            ${{ env.NEXUS3_URL }}/service/rest/v1/staging/move/${{ inputs.target_repository }}?tag=\\"${{ inputs.tag }}\\"
+            ${{ env.NEXUS3_URL }}/service/rest/v1/staging/move/${{ inputs.target_repository }}?tag=\"${{ inputs.tag }}\"
