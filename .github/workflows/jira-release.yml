@@ -52,7 +52,7 @@ jobs:
 
           JIRA_BASIC_AUTH_TOKEN=$(echo -n "$AUTH_STRING" | base64 -w0 -)
 
-          cat >> $GITHUB_OUTPUT <<EOF  
+          cat >> $GITHUB_OUTPUT <<EOF
           JIRA_BASIC_AUTH_TOKEN=$JIRA_BASIC_AUTH_TOKEN
           EOF
 
