@@ -1,0 +1,15 @@
+name: Version Set
+description: Setting the version
+
+inputs:
+  version:
+    description: 'The version e.g. 9.5.1-202507150815-191-270e262'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set Version
+      shell: bash
+      run: |
+        ${{ github.action_path }}/setVersion.sh "${{ inputs.version }}"

@@ -40,7 +40,6 @@ on:
         required: true
 
 env:
-  SCRIPTS_DIR: .github/scripts
   SNAPSHOT_SUFFIX: SNAPSHOT
 
 jobs:
@@ -80,10 +79,12 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Bump version
-        shell: bash
-        run: |
-          ${{ env.SCRIPTS_DIR }}/setVersion.sh "${{ steps.setup.outputs.NEW_VERSION }}-${{ env.SNAPSHOT_SUFFIX }}"
+        uses: uniport/workflows/.github/actions/bump-version@main
+        with:
+          version: ${{ steps.setup.outputs.NEW_VERSION }}-${{ env.SNAPSHOT_SUFFIX }}
 
+      - name: Commit&Push Changes
+        run: |
           git add **/pom.xml
           git add **/web/package.json || echo "No package.json found"
           git add **/web/package-lock.json || echo "No package-lock.json found"

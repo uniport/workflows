@@ -25,7 +25,6 @@ on:
 
 env:
   CHANGELOG_FILE_NAME: CHANGELOG.md
-  SCRIPTS_DIR: .github/scripts
 
 jobs:
   move:
@@ -48,10 +47,12 @@ jobs:
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Update Changelog
-        shell: bash
-        run: |
-          ${{ env.SCRIPTS_DIR }}/updateChangelog.sh "${{ inputs.version }}"
+        uses: uniport/workflows/.github/actions/update-changelog@main
+        with:
+          version: ${{ inputs.version }}
 
+      - name: Commit&Push Changes
+        run: |
           git add ${{ env.CHANGELOG_FILE_NAME }}
           git commit \
               --no-verify \

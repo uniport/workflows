@@ -31,9 +31,6 @@ on:
         type: string
         required: true
 
-env:
-  SCRIPTS_DIR: .github/scripts
-
 jobs:
   move:
     name: Jira Release
@@ -57,8 +54,9 @@ jobs:
           EOF
 
       - name: Release Jira
-        env:
-          JIRA_BASIC_AUTH_TOKEN: '${{ steps.setup.outputs.JIRA_BASIC_AUTH_TOKEN }}'
-        shell: bash
-        run: |
-          ${{ env.SCRIPTS_DIR }}/jiraRelease.sh "${{ inputs.component_name }}" "${{ inputs.semver }}" "${{ inputs.version }}"
+        uses: uniport/workflows/.github/actions/release-jira@main
+        with:
+          component_name: ${{ inputs.component_name }}
+          semver: ${{ inputs.semver }}
+          version: ${{ inputs.version }}
+          jira_basic_auth_token: ${{ steps.setup.outputs.JIRA_BASIC_AUTH_TOKEN }}

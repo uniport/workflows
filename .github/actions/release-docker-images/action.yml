@@ -1,0 +1,38 @@
+name: Docker Images Move
+description: Moving docker images in Nexus3 (multi-arch)
+
+inputs:
+  tag:
+    description: 'The tag name associated with docker images to move'
+    required: true
+  source_registry:
+    description: 'The source registry to move the docker images from'
+    required: true
+  target_registry:
+    description: 'The target registry to move the docker images to'
+    required: true
+  nexus3_url:
+    description: 'The URL of the Nexus3 instance'
+    required: true
+  nexus3_user:
+    description: 'The user for the Nexus3 instance'
+    required: true
+  nexus3_password:
+    description: 'The password for the Nexus3 instance'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    # https://help.sonatype.com/en/staging.html
+    - name: Move docker images
+      shell: bash
+      run: |
+        docker run --rm -t \
+          -v ${{ github.action_path }}:/tmp \
+          -e NEXUS3_URL="${{ inputs.nexus3_url }}" \
+          -e NEXUS_USER="${{ inputs.nexus3_user }}" \
+          -e NEXUS_PW="${{ inputs.nexus3_password }}" \
+          -e DOCKER_STAGING_REGISTRY="${{ inputs.source_registry }}" \
+          -e DOCKER_RELEASE_REGISTRY="${{ inputs.target_registry }}" \
+          peschee/zx:2.0.0 /tmp/release-nexus-tag.mjs "${{ inputs.tag }}" --quiet

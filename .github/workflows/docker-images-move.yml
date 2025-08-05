@@ -34,24 +34,17 @@ on:
         type: string
         required: true
 
-env:
-  NEXUS3_URL: ${{ vars.NEXUS3_URL }}
-  NEXUS3_USER: ${{ vars.NEXUS3_USER }}
-  SCRIPTS_DIR: .github/scripts
-
 jobs:
   move:
     name: Docker Images Move
     runs-on: ubuntu-latest
     steps:
-      # https://help.sonatype.com/en/staging.html
       - name: Move docker images
-        run: |
-          docker run --rm -t \
-            -v ${{ env.SCRIPTS_DIR }}:/tmp \
-            -e NEXUS_USER="${{ env.NEXUS3_USER }}" \
-            -e NEXUS_PW="${{ secrets.NEXUS3_PW }}" \
-            -e NEXUS3_URL="${{ env.NEXUS3_URL }}" \
-            -e DOCKER_STAGING_REGISTRY="${{ inputs.source_registry }}" \
-            -e DOCKER_RELEASE_REGISTRY="${{ inputs.target_registry }}" \
-            peschee/zx:2.0.0 /tmp/release-nexus-tag.mjs "${{ inputs.tag }}" --quiet
+        uses: uniport/workflows/.github/actions/release-docker-images@main
+        with:
+          tag: ${{ inputs.tag }}
+          source_registry: ${{ inputs.source_registry }}
+          target_registry: ${{ inputs.target_registry }}
+          nexus3_url: ${{ vars.NEXUS3_URL }}
+          nexus3_user: ${{ vars.NEXUS3_USER }}
+          nexus3_password: ${{ secrets.NEXUS3_PW }}

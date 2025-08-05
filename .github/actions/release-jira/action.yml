@@ -1,0 +1,26 @@
+name: Jira Release
+description: Doing a Jira release
+
+inputs:
+  component_name:
+    description: 'The component name to release'
+    required: true
+  semver:
+    description: 'The SemVer e.g. 9.5.1'
+    required: true
+  version:
+    description: 'The version e.g. 9.5.1-202507150815-191-270e262'
+    required: true
+  jira_basic_auth_token:
+    description: 'The basic auth token for jira in the form <firstname.lastname@inventage.com>:<token> base64-encoded'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Update Changelog
+      env:
+        JIRA_BASIC_AUTH_TOKEN: '${{ inputs.jira_basic_auth_token }}'
+      shell: bash
+      run: |
+        ${{ github.action_path }}/jiraRelease.sh "${{ inputs.component_name }}" "${{ inputs.semver }}" "${{ inputs.version }}"
