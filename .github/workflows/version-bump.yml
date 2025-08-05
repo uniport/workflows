@@ -53,19 +53,19 @@ jobs:
         run: |
           set -u
 
-          NEW_MINOR="${{ inputs.minor }}"
-          NEW_PATCH="${{ inputs.patch }}"
+          NEXT_MINOR="${{ inputs.minor }}"
+          NEXT_PATCH="${{ inputs.patch }}"
 
           if [[ "${{ inputs.patch }}" -eq 0 ]]; then
-            NEW_MINOR="$(( ${{ inputs.minor }} + 1 ))"
+            NEXT_MINOR="$(( ${{ inputs.minor }} + 1 ))"
           else
-            NEW_PATCH="$(( ${{ inputs.patch }} + 1 ))"
+            NEXT_PATCH="$(( ${{ inputs.patch }} + 1 ))"
           fi
 
-          NEW_VERSION="${{ inputs.major }}.${NEW_MINOR}.${NEW_PATCH}"
+          NEXT_VERSION="${{ inputs.major }}.${NEXT_MINOR}.${NEXT_PATCH}"
 
           cat >> $GITHUB_OUTPUT <<EOF  
-          NEW_VERSION=$NEW_VERSION
+          NEXT_VERSION=$NEXT_VERSION
           EOF
 
       - name: Checkout Repository
@@ -81,7 +81,7 @@ jobs:
       - name: Bump version
         uses: uniport/workflows/.github/actions/bump-version@main
         with:
-          version: ${{ steps.setup.outputs.NEW_VERSION }}-${{ env.SNAPSHOT_SUFFIX }}
+          version: ${{ steps.setup.outputs.NEXT_VERSION }}-${{ env.SNAPSHOT_SUFFIX }}
 
       - name: Commit&Push Changes
         run: |
@@ -91,7 +91,7 @@ jobs:
 
           git commit \
             --no-verify \
-            --message "Set version to ${{ steps.setup.outputs.NEW_VERSION }}"
+            --message "Set version to ${{ steps.setup.outputs.NEXT_VERSION }}"
 
           git push --set-upstream origin ${{ inputs.branch_name }}
 
@@ -106,5 +106,5 @@ jobs:
           - **patch**: \`${{ inputs.patch }}\`          
           - **branch_name**: \`${{ inputs.branch_name }}\`          
           ### Outputs
-          - **NEW_VERSION**: \`${{ steps.setup.outputs.NEW_VERSION }}\`
+          - **NEXT_VERSION**: \`${{ steps.setup.outputs.NEXT_VERSION }}\`
           EOF
