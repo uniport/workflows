@@ -48,13 +48,9 @@ jobs:
         id: setup
         shell: bash
         run: |
-          AUTH_STRING="${{ vars.ATLASSIAN_AUTH_USR }}:${{ secrets.ATLASSIAN_AUTH_PSW }}"
+          JIRA_BASIC_AUTH_TOKEN=$(echo -n "${{ vars.ATLASSIAN_AUTH_USR }}:${{ secrets.ATLASSIAN_AUTH_PSW }}" | base64 -w0 -)
 
-          JIRA_BASIC_AUTH_TOKEN=$(echo -n "$AUTH_STRING" | base64 -w0 -)
-
-          cat >> $GITHUB_OUTPUT <<EOF
-          JIRA_BASIC_AUTH_TOKEN=$JIRA_BASIC_AUTH_TOKEN
-          EOF
+          echo "JIRA_BASIC_AUTH_TOKEN=$JIRA_BASIC_AUTH_TOKEN" >> $GITHUB_OUTPUT
 
       - name: Release Jira
         uses: uniport/workflows/.github/actions/release-jira@main

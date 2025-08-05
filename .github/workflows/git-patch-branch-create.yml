@@ -44,7 +44,7 @@ jobs:
         run: |
           PATCH_BRANCH_NAME="${{ inputs.major }}.${{ inputs.minor }}.x"
 
-          cat >> $GITHUB_OUTPUT <<EOF  
+          cat >> $GITHUB_OUTPUT <<EOF
           PATCH_BRANCH_NAME=$PATCH_BRANCH_NAME
           EOF
 
