@@ -4,7 +4,7 @@ name: Jira Release
 on:
   workflow_call:
     secrets:
-      ATLASSIAN_AUTH_PSW:
+      ATLASSIAN_AUTH_TOKEN:
         required: true
     inputs:
       version:
@@ -48,7 +48,7 @@ jobs:
         id: setup
         shell: bash
         run: |
-          JIRA_BASIC_AUTH_TOKEN=$(echo -n "${{ vars.ATLASSIAN_AUTH_USR }}:${{ secrets.ATLASSIAN_AUTH_PSW }}" | base64 -w0 -)
+          JIRA_BASIC_AUTH_TOKEN=$(echo -n "${{ vars.ATLASSIAN_AUTH_USR }}:${{ secrets.ATLASSIAN_AUTH_TOKEN }}" | base64 -w0 -)
 
           echo "JIRA_BASIC_AUTH_TOKEN=$JIRA_BASIC_AUTH_TOKEN" >> $GITHUB_OUTPUT
 
