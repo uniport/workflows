@@ -12,7 +12,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 > [!TIP]
 > Composite actions available in this repository.
 
-- [Abort if there is uncommitted code](./.github/actions/check-uncommitted-code)
+- [Abort if there is uncommitted code](./.github/actions/ensure-no-uncommitted-code)
 - [Add Helm repositories](./.github/actions/add-helm-repositories)
 - [Disable man-db triggers](./.github/actions/disable-man-db-triggers)
 - [Ensures a branch exists and aborts otherwise](./.github/actions/ensure-branch)
