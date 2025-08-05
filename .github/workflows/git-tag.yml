@@ -49,6 +49,7 @@ jobs:
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
+      # NOTE: this will fail, if the commit that should be tagged, has modified a file in .github/workflows
       - name: Create Git Tag
         shell: bash
         run: |
