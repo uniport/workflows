@@ -93,8 +93,8 @@ declare -r NEW_VERSION_DESCRIPTION="$3"
 # 3) create another -NEXT version
 # 4) update previous with (the one from 2) to status release and move open tickets to new -NEXT version
 
-readonly idNEXT
 idNEXT=$(getVersionId "${COMPONENT} NEXT")
+readonly idNEXT
 if [ -z "${idNEXT}" ]; then
     echo "Empty id. Have you properly setup authentication?"
     exit 1
@@ -108,8 +108,8 @@ updateNEXTVersion "${idNEXT}"
 # Create new -NEXT version
 echo "--> Creating new -NEXT version"
 createNewVersion "${COMPONENT} NEXT"
-readonly newNextVersion
 newNextVersion=$(getVersionId "${COMPONENT} NEXT")
+readonly newNextVersion
 
 # Release the updated version
 releaseVersion "${idNEXT}" "${newNextVersion}"

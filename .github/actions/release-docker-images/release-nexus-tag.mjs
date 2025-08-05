@@ -7,7 +7,7 @@ $.verbose = argv.verbose || false;
 const NEXUS_USER = process.env.NEXUS_USER;
 const NEXUS_PW = process.env.NEXUS_PW;
 const [NEXUS_TAG] = argv._;
-const NEXUS3_URL = process.env.NEXUS3_HOST || 'https://nexus3.inventage.com';
+const NEXUS3_URL = process.env.NEXUS3_URL || 'https://nexus3.inventage.com';
 const DOCKER_STAGING_REGISTRY = process.env.DOCKER_STAGING_REGISTRY || 'uniportcr.artifacts.inventage.com';
 const DOCKER_RELEASE_REGISTRY = process.env.DOCKER_RELEASE_REGISTRY || 'docker-registry.inventage.com:10093';
 
@@ -25,7 +25,7 @@ let components = [];
 
 // @see https://nexus3.inventage.com/swagger-ui/
 try {
-  const nexusRequestUrl = `${NEXUS3_HOST}/service/rest/v1/search?tag=${NEXUS_TAG}`;
+  const nexusRequestUrl = `${NEXUS3_URL}/service/rest/v1/search?tag=${NEXUS_TAG}`;
   const componentsResponse = await fetch(nexusRequestUrl, {
     headers: {
       Authorization: `Basic ${Buffer.from(`${NEXUS_USER}:${NEXUS_PW}`).toString('base64')}`,

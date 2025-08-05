@@ -20,8 +20,8 @@ if [[ "$#" -eq 0 ]]; then
 fi
 
 readonly newVersion=$1
-readonly newVersionWithoutSnapshot
 newVersionWithoutSnapshot=$(sed "s/-SNAPSHOT//" <<<"${newVersion}")
+readonly newVersionWithoutSnapshot
 
 # Update pom files
 mvn versions:set \
