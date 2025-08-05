@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - uses: uniport/workflows/.github/actions/setup-node-and-dependencies@main
 

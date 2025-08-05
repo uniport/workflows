@@ -43,6 +43,7 @@ jobs:
         with:
           # to fetch everything to be able to tag any commit
           fetch-depth: 0
+          ref: ${{ github.ref }}
 
       - name: Configure Git user
         run: |
