@@ -130,7 +130,7 @@ jobs:
     needs: [setup]
     uses: ./.github/workflows/docker-images-move.yml
     with:
-      tag: ${{ needs.setup.outputs.TAG_NAME_NPM }}
+      tag: ${{ needs.setup.outputs.TAG_NAME_DOCKER_HELM }}
       source_registry: ${{ vars.STAGING_REGISTRY_DOCKER }}
       target_registry: ${{ vars.RELEASE_REGISTRY_DOCKER }}
     secrets:

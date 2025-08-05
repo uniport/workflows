@@ -30,6 +30,8 @@ jobs:
   move:
     name: Changelog Update
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # update changelog
     steps:
       - name: Validate version format
         uses: uniport/workflows/.github/actions/validate-version@main

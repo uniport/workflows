@@ -46,6 +46,8 @@ jobs:
   bump:
     name: Version Bump
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # update version
     steps:
       - name: Setup
         id: setup

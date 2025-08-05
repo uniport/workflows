@@ -3,6 +3,9 @@ name: Jira Release
 
 on:
   workflow_call:
+    secrets:
+      ATLASSIAN_AUTH_PSW:
+        required: true
     inputs:
       version:
         description: 'The version e.g. 9.5.1-202507150815-191-270e262'
@@ -45,7 +48,7 @@ jobs:
         id: setup
         shell: bash
         run: |
-          AUTH_STRING="${{ secrets.ATLASSIAN_AUTH_USR }}:${{ secrets.ATLASSIAN_AUTH_PSW }}"
+          AUTH_STRING="${{ vars.ATLASSIAN_AUTH_USR }}:${{ secrets.ATLASSIAN_AUTH_PSW }}"
 
           JIRA_BASIC_AUTH_TOKEN=$(echo -n "$AUTH_STRING" | base64 -w0 -)
 
