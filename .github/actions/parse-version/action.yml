@@ -22,6 +22,9 @@ outputs:
   full_commit_sha:
     description: the short commit sha in the version string
     value: ${{ steps.full_sha.outputs.FULL_SHA }}
+  pre_release:
+    description: whether the version is a pre-release
+    value: ${{ steps.pre_release.outputs.PRE_RELEASE }}
   major:
     description: the major version in the version string
     value: ${{ steps.semver.outputs.MAJOR }}
@@ -71,6 +74,17 @@ runs:
 
         echo "Expanded ref $SHORT_SHA to SHA $FULL_SHA"
         echo "FULL_SHA=$FULL_SHA" >> $GITHUB_OUTPUT
+
+    - name: Check if pre-release
+      id: pre_release
+      shell: bash
+      run: |
+        # Check whether this version is a pre-release
+        if [[ "${{ steps.parse.outputs.SEM_VER }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+          echo "PRE_RELEASE=true" >> $GITHUB_OUTPUT
+        else
+          echo "PRE_RELEASE=false" >> $GITHUB_OUTPUT
+        fi
 
     - name: Parse SemVer
       id: semver
