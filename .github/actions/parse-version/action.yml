@@ -17,8 +17,11 @@ outputs:
     description: the run id in the version string
     value: ${{ steps.version.outputs.RUN_ID }}
   commit_sha:
-    description: the commit sha in the version string
-    value: ${{ steps.version.outputs.COMMIT_SHA }}
+    description: the short commit sha in the version string
+    value: ${{ steps.version.outputs.SHA_SHORT }}
+  full_commit_sha:
+    description: the short commit sha in the version string
+    value: ${{ steps.full_sha.outputs.FULL_SHA }}
   major:
     description: the major version in the version string
     value: ${{ steps.semver.outputs.MAJOR }}
@@ -36,14 +39,38 @@ runs:
       id: version
       shell: bash
       run: |
-        IFS=- read SEM_VER BUILD_DATE RUN_ID COMMIT_SHA <<< "${{ inputs.version }}"
+        IFS=- read SEM_VER BUILD_DATE RUN_ID SHORT_SHA <<< "${{ inputs.version }}"
 
         cat >> $GITHUB_OUTPUT <<EOF  
         SEM_VER=$SEM_VER
         BUILD_DATE=$BUILD_DATE
         RUN_ID=$RUN_ID
-        COMMIT_SHA=$COMMIT_SHA
+        SHORT_SHA=$SHORT_SHA
         EOF
+
+    - name: Resolve short SHA
+      id: full_sha
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      shell: bash
+      run: |
+        SHORT_SHA="${{ steps.version.outputs.SHORT_SHA }}"
+
+        # Resolve short SHA to full SHA using GitHub API
+        # Fail if gh command fails (e.g., no token, network error)
+        FULL_SHA=$(gh api /repos/"$GITHUB_REPOSITORY"/commits/"$SHORT_SHA" --jq '.sha') || {
+          echo "Error: gh api command failed to resolve $SHORT_SHA" >&2
+          exit 1
+        }
+
+        # Check if FULL_SHA is empty
+        if [ -z "$FULL_SHA" ]; then
+          echo "Error: Failed to resolve ref $SHORT_SHA (possibly invalid SHA or missing GH_TOKEN)" >&2
+          exit 1
+        fi
+
+        echo "Expanded ref $SHORT_SHA to SHA $FULL_SHA"
+        echo "FULL_SHA=$FULL_SHA" >> $GITHUB_OUTPUT
 
     - name: Parse SemVer
       id: semver
