@@ -50,11 +50,11 @@ on:
         type: boolean
       jira_release_name_prefix:
         description: 'The prefix of the Jira release name'
-        required: true
+        default: ''
         type: string
       archetype_component_name:
         description: 'The component name in the Archetype'
-        required: true
+        default: ''
         type: string
     secrets:
       NEXUS3_PW:
@@ -183,7 +183,7 @@ jobs:
 
   jira-release:
     name: Do Jira release
-    if: ${{ inputs.jira_release }}
+    if: ${{ inputs.jira_release && inputs.jira_release_name_prefix != '' }}
     needs: [setup]
     uses: uniport/workflows/.github/workflows/jira-release.yml@main
     with:
@@ -195,7 +195,7 @@ jobs:
 
   archetype:
     name: Update Archetype
-    if: ${{ inputs.update_archetype }}
+    if: ${{ inputs.update_archetype && inputs.archetype_component_name != '' }}
     needs: [setup]
     uses: uniport/workflows/.github/workflows/update-archetype.yml@main
     with:
