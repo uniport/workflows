@@ -92,7 +92,8 @@ jobs:
           git add **/web/package.json || echo "No package.json found"
           git add **/web/package-lock.json || echo "No package-lock.json found"
 
-          git commit \
+          # only commit if there are changes
+          git diff-index --quiet HEAD || git commit \
             --no-verify \
             --message "Set version to ${{ steps.setup.outputs.NEXT_VERSION }}"
 
