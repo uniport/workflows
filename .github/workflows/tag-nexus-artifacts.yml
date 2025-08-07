@@ -104,7 +104,7 @@ jobs:
         run: |
           TAG_NAME=${{ inputs.tag_name }}
           if [ -z "$TAG_NAME" ]; then
-            TAG_NAME="${{ inputs.group_id }}-${{ inputs.version }}"
+            TAG_NAME="${{ inputs.group_id }}_${{ inputs.version }}"
           fi
           TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}" # Calculate all tag names
           TAG_NAME_DOCKER="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_DOCKER }}"
