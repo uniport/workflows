@@ -38,7 +38,7 @@ jobs:
       # https://help.sonatype.com/en/tagging.html
       - name: Get tag
         run: |
-          curl --fail --silent --show-error -X POST \
+          curl --fail --silent --show-error \
             --user "${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}" \
             ${{ env.NEXUS3_URL }}/service/rest/v1/tags/${{ inputs.tag }}
 
