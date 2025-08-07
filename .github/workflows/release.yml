@@ -40,6 +40,10 @@ on:
         description: 'Update the archetype'
         default: true
         type: boolean
+      github_release:
+        description: 'Generate a GitHub release'
+        default: true
+        type: boolean
       send_announcement:
         description: 'Announce the release on Rocket.Chat'
         default: true
@@ -200,6 +204,26 @@ jobs:
       command: release
     secrets:
       UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
+
+  github-release:
+    name: Create a release on GitHub
+    runs-on: ubuntu-latest
+    if: ${{ inputs.github_release }}
+    needs: [setup, promote, git-tag]
+    permissions:
+      contents: write
+    steps:
+      - name: Create release on GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ inputs.version }}
+          tag_name: ${{ needs.setup.outputs.SEM_VER }}
+          body: |
+            ## Changelog
+
+            For a more high-level overview of what has changed, have a look at the **CHANGELOG.md**
+          generate_release_notes: true
+          prerelease: false
 
   announce:
     name: Announce new release
