@@ -238,6 +238,7 @@ jobs:
       - bump-version
       - jira-release
       - archetype
+      - github-release
     runs-on: ubuntu-latest
     steps:
       - name: Notify uniport team
