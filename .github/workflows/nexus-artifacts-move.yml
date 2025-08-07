@@ -35,6 +35,13 @@ jobs:
     name: Artifacts Move
     runs-on: ubuntu-latest
     steps:
+      # https://help.sonatype.com/en/tagging.html
+      - name: Get tag
+        run: |
+          curl --fail --silent --show-error -X POST \
+            --user "${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}" \
+            ${{ env.NEXUS3_URL }}/service/rest/v1/tags/${{ inputs.tag }}
+
       # https://help.sonatype.com/en/staging.html
       - name: Move artifacts
         run: |
