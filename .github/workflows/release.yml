@@ -61,56 +61,6 @@ on:
         required: true
       ROCKETCHAT_WEBHOOK_URL:
         required: true
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'The version string'
-        required: true
-        type: string
-      target_branch:
-        description: 'The branch where the changelog will be updated and the version bumped'
-        required: true
-        type: string
-      promote_artifacts:
-        description: 'Promote Nexus3 artifacts'
-        default: true
-        type: boolean
-      create_tag:
-        description: 'Create the git tag'
-        default: true
-        type: boolean
-      update_changelog:
-        description: 'Update the changelog'
-        default: true
-        type: boolean
-      create_patch_branch:
-        description: 'Create the git patch branch'
-        default: true
-        type: boolean
-      bump_version:
-        description: 'Set the next version'
-        default: true
-        type: boolean
-      jira_release:
-        description: 'Do a Jira release'
-        default: true
-        type: boolean
-      update_archetype:
-        description: 'Update the archetype'
-        default: true
-        type: boolean
-      send_announcement:
-        description: 'Announce the release on Rocket.Chat'
-        default: true
-        type: boolean
-      jira_release_name_prefix:
-        description: 'The prefix of the Jira release name'
-        required: true
-        type: string
-      archetype_component_name:
-        description: 'The component name in the Archetype'
-        required: true
-        type: string
 
 jobs:
   setup:
