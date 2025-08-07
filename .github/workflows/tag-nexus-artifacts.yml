@@ -106,32 +106,40 @@ jobs:
           if [ -z "$TAG_NAME" ]; then
             TAG_NAME="${{ inputs.group_id }}_${{ inputs.version }}"
           fi
+
           TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}" # Calculate all tag names
           TAG_NAME_DOCKER="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_DOCKER }}"
           TAG_NAME_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_HELM }}"
           TAG_NAME_NPM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_NPM }}"
 
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "TAG_NAME_MAVEN=$TAG_NAME_MAVEN" >> $GITHUB_OUTPUT # Output tag names
-          echo "TAG_NAME_DOCKER=$TAG_NAME_DOCKER" >> $GITHUB_OUTPUT
-          echo "TAG_NAME_HELM=$TAG_NAME_HELM" >> $GITHUB_OUTPUT
-          echo "TAG_NAME_NPM=$TAG_NAME_NPM" >> $GITHUB_OUTPUT
-          echo "STAGING_REPO_MAVEN=${{ env.STAGING_REPO_MAVEN }}" >> $GITHUB_OUTPUT # Output repo IDs
-          echo "STAGING_REPO_DOCKER=${{ env.STAGING_REPO_DOCKER }}" >> $GITHUB_OUTPUT
-          echo "STAGING_REPO_HELM=${{ env.STAGING_REPO_HELM }}" >> $GITHUB_OUTPUT
-          echo "STAGING_REPO_NPM=${{ env.STAGING_REPO_NPM }}" >> $GITHUB_OUTPUT
+          cat >> $GITHUB_OUTPUT <<EOF
+          TAG_NAME=$TAG_NAME
+          TAG_NAME_MAVEN=$TAG_NAME_MAVEN
+          TAG_NAME_DOCKER=$TAG_NAME_DOCKER
+          TAG_NAME_HELM=$TAG_NAME_HELM
+          TAG_NAME_NPM=$TAG_NAME_NPM
+          STAGING_REPO_MAVEN=${{ env.STAGING_REPO_MAVEN }}
+          STAGING_REPO_DOCKER=${{ env.STAGING_REPO_DOCKER }}
+          STAGING_REPO_HELM=${{ env.STAGING_REPO_HELM }}
+          STAGING_REPO_NPM=${{ env.STAGING_REPO_NPM }}
+          EOF
 
-          echo "## Setup Tag Name Details" >> $GITHUB_STEP_SUMMARY
-          echo "### Outputs" >> $GITHUB_STEP_SUMMARY
-          echo "- **TAG_NAME**: \`$TAG_NAME\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **TAG_NAME_MAVEN**: \`$TAG_NAME_MAVEN\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **TAG_NAME_DOCKER**: \`$TAG_NAME_DOCKER\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **TAG_NAME_HELM**: \`$TAG_NAME_HELM\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **TAG_NAME_NPM**: \`$TAG_NAME_NPM\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **STAGING_REPO_MAVEN**: \`${{ env.STAGING_REPO_MAVEN }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **STAGING_REPO_DOCKER**: \`${{ env.STAGING_REPO_DOCKER }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **STAGING_REPO_HELM**: \`${{ env.STAGING_REPO_HELM }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **STAGING_REPO_NPM**: \`${{ env.STAGING_REPO_NPM }}\`" >> $GITHUB_STEP_SUMMARY
+      - name: Summary
+        shell: bash
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          ## Setup Tag Name Details
+          ### Outputs
+          - **TAG_NAME**: \`${{ steps.tag.outputs.TAG_NAME }}\`
+          - **TAG_NAME_MAVEN**: \`$${{ steps.tag.outputs.TAG_NAME_MAVEN }}\`
+          - **TAG_NAME_DOCKER**: \`$${{ steps.tag.outputs.TAG_NAME_DOCKER }}\`
+          - **TAG_NAME_HELM**: \`$${{ steps.tag.outputs.TAG_NAME_HELM }}\`
+          - **TAG_NAME_NPM**: \`$${{ steps.tag.outputs.TAG_NAME_NPM }}\`
+          - **STAGING_REPO_MAVEN**: \`${{ env.STAGING_REPO_MAVEN }}\`
+          - **STAGING_REPO_DOCKER**: \`${{ env.STAGING_REPO_DOCKER }}\`
+          - **STAGING_REPO_HELM**: \`${{ env.STAGING_REPO_HELM }}\`
+          - **STAGING_REPO_NPM**: \`${{ env.STAGING_REPO_NPM }}\`
+          EOF
 
   tag_mvn:
     name: Create Tag (maven)
