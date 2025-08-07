@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1 # Fetch only the latest commit
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.branch_name }}
 
       - name: Configure Git user
         run: |
@@ -54,10 +54,13 @@ jobs:
         with:
           version: ${{ inputs.version }}
 
-      - name: Commit&Push Changes
+      - name: Commit
         run: |
           git add ${{ env.CHANGELOG_FILE_NAME }}
           git commit \
               --no-verify \
               --message "Update changelog with new version and prepare next unreleased version"
-          git push --set-upstream origin ${{ inputs.branch_name }}
+
+      - name: Push tag
+        run: |
+          git push origin ${{ inputs.branch_name }}
