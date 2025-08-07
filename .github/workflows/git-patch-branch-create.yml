@@ -16,6 +16,10 @@ on:
         description: 'The patch version in SemVer'
         type: string
         required: true
+      branch_name:
+        description: 'The branch name'
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       major:
@@ -28,6 +32,10 @@ on:
         required: true
       patch:
         description: 'The patch version in SemVer'
+        type: string
+        required: true
+      branch_name:
+        description: 'The branch name'
         type: string
         required: true
 
@@ -52,20 +60,22 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1 # Fetch only the latest commit
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.branch_name }}
 
       - name: Configure Git user
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - name: Create patch branch
+      - name: Switch to/Create patch branch
+        run: |
+          git switch "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}" || git switch --create "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}"
+
+      - name: Push patch branch
         if: ${{ inputs.patch }} != "0"
         shell: bash
         run: |
-          git checkout -B "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}"
           git push origin "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}"
-          git checkout -
 
       - name: Summary
         shell: bash

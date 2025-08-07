@@ -74,7 +74,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1 # Fetch only the latest commit
-          ref: ${{ github.ref }}
+          ref: ${{ inputs.branch_name }}
 
       - name: Configure Git user
         run: |
@@ -86,7 +86,7 @@ jobs:
         with:
           version: ${{ steps.setup.outputs.NEXT_VERSION }}-${{ env.SNAPSHOT_SUFFIX }}
 
-      - name: Commit&Push Changes
+      - name: Commit
         run: |
           git add **/pom.xml
           git add **/web/package.json || echo "No package.json found"
@@ -96,7 +96,9 @@ jobs:
             --no-verify \
             --message "Set version to ${{ steps.setup.outputs.NEXT_VERSION }}"
 
-          git push --set-upstream origin ${{ inputs.branch_name }}
+      - name: Push
+        run: |
+          git push origin ${{ inputs.branch_name }}
 
       - name: Summary
         shell: bash
