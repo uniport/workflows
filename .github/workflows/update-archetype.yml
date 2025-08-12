@@ -60,7 +60,7 @@ jobs:
             archetype-inventage-portal-solution
 
       - name: Checkout archetype repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: uniport/archetype-inventage-portal-solution
           token: ${{ steps.app-token.outputs.token }}

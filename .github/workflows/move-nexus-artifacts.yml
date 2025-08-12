@@ -58,7 +58,7 @@ jobs:
       TAG_NAME_NPM: ${{ steps.variables.outputs.TAG_NAME_NPM }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1 # Fetch only the latest commit
           ref: ${{ github.ref }}

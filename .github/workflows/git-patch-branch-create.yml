@@ -57,7 +57,7 @@ jobs:
           EOF
 
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1 # Fetch only the latest commit
           ref: ${{ inputs.branch_name }}
