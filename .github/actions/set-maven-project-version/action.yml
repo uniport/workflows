@@ -44,7 +44,7 @@ runs:
         fi
 
         if [[ -n "$SETTINGS_FILE" ]]; then
-          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
+          mvn -B --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
         else
-          mvn -B --no-transfer-progress validate build-helper:parse-version versions:set -DnewVersion=${{ inputs.version }} -DoldVersion=* -DgroupId=* -DartifactId=* -DgenerateBackupPoms=false
+          mvn -B --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
         fi
