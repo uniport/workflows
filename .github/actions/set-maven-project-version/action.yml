@@ -44,7 +44,7 @@ runs:
         fi
 
         if [[ -n "$SETTINGS_FILE" ]]; then
-          mvn -B --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
+          mvn -B -V --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
         else
-          mvn -B --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+          mvn -B -V --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
         fi
