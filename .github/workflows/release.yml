@@ -12,9 +12,17 @@ on:
         description: 'The branch where the changelog will be updated and the version bumped'
         required: true
         type: string
-      promote_artifacts:
-        description: 'Promote Nexus3 artifacts'
-        default: true
+      promote_docker_helm_artifacts:
+        description: 'Promote docker & helm artifacts'
+        default: false
+        type: boolean
+      promote_maven_artifacts:
+        description: 'Promote maven artifacts'
+        default: false
+        type: boolean
+      promote_npm_artifacts:
+        description: 'Promote npm artifacts'
+        default: false
         type: boolean
       create_tag:
         description: 'Create the git tag'
@@ -120,13 +128,14 @@ jobs:
 
   promote:
     name: Promote Nexus Artifact
-    if: ${{ inputs.promote_artifacts }}
+    if: ${{ inputs.promote_docker_helm_artifacts || inputs.promote_maven_artifacts || inputs.promote_npm_artifacts }}
     needs: [setup]
     uses: uniport/workflows/.github/workflows/move-nexus-artifacts.yml@main
     with:
       version: ${{ inputs.version }}
-      move_docker_helm: true
-      move_maven: true
+      move_docker_helm: ${{ inputs.promote_docker_helm_artifacts }}
+      move_maven: ${{ inputs.promote_maven_artifacts }}
+      move_npm: ${{ inputs.promote_npm_artifacts }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
