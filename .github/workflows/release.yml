@@ -249,4 +249,4 @@ jobs:
           message: |
             A **new release** just happened! 🚀
 
-            [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md): `${{ inputs.version }}`
+            [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md): \`${{ inputs.version }}\`
