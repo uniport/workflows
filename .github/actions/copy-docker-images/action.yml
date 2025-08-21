@@ -1,0 +1,28 @@
+name: Copy Docker Image
+description: Copy multi-arch image between registries
+
+inputs:
+  source_image:
+    description: 'The source image to move the docker image from'
+    required: true
+  source_credentials:
+    description: 'The credentials for the source registry'
+    required: true
+  destination_image:
+    description: 'The destination image to move the docker image to'
+    required: true
+  destination_credentials:
+    description: 'The credentials for the destination registry'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Copy multi-arch docker image
+      shell: bash
+      run: |
+        docker run --rm quay.io/skopeo/stable:v1 copy \
+          --all \
+          --src-creds ${{ inputs.source_credentials }} \
+          --dest-creds ${{ inputs.destination_credentials }} \
+          docker://${{ inputs.source_image }} docker://${{ inputs.destination_image }}

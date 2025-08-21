@@ -1,0 +1,55 @@
+name: Copy multi-arch docker image
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version string'
+        required: true
+        type: string
+      source_registry:
+        description: 'The source registry to move the docker image from'
+        required: true
+        type: string
+      source_image:
+        description: 'The source image to move'
+        required: true
+        type: string
+      destination_registry:
+        description: 'The destination registry to move the docker image to'
+        required: true
+        type: string
+      destination_image:
+        description: 'The destination image to move to'
+        required: true
+        type: string
+    secrets:
+      source_credentials:
+        required: true
+      destination_credentials:
+        required: true
+
+jobs:
+  copy:
+    name: Copy image
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write # push docker image
+    steps:
+      - name: Copy
+        uses: uniport/workflows/.github/actions/copy-docker-images@main
+        with:
+          source_image: ${{ inputs.source_registry }}/${{ inputs.source_image }}:${{ inputs.version }}
+          source_credentials: ${{ secrets.source_credentials }}
+          destination_image: ${{ inputs.destination_registry }}/${{ inputs.destination_image }}:${{ inputs.version }}
+          destination_credentials: ${{ secrets.destination_credentials }}
+
+      - name: Summary
+        shell: bash
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Setup
+          ### Outputs
+          - **SOURCE_IMAGE**: \`${{ inputs.source_registry }}/${{ inputs.source_image }}:${{ inputs.version }}\`
+          - **DESTINATION_IMAGE**: \`${{ inputs.destination_registry }}/${{ inputs.destination_image }}:${{ inputs.version }}\`
+          EOF
