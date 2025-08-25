@@ -64,7 +64,7 @@ jobs:
             uniport-deployment
 
       - name: Checkout deployment repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: uniport/uniport-deployment
           token: ${{ steps.app-token.outputs.token }}
