@@ -1,0 +1,39 @@
+name: Create GitHub Release
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version string'
+        required: true
+        type: string
+
+jobs:
+  github-release:
+    name: Create a release on GitHub
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create release
+    steps:
+      - name: Validate version format
+        uses: uniport/workflows/.github/actions/validate-version@main
+        with:
+          version: ${{ inputs.version }}
+
+      - name: Parse version string
+        id: parse
+        uses: uniport/workflows/.github/actions/parse-version@main
+        with:
+          version: ${{ inputs.version }}
+
+      - name: Create release on GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ inputs.version }}
+          tag_name: ${{ steps.parse.outputs.sem_ver }}
+          body: |
+            ## Changelog
+
+            For a more high-level overview of what has changed, take a look at the **CHANGELOG.md**
+          generate_release_notes: true
+          prerelease: false
