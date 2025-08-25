@@ -88,9 +88,9 @@ jobs:
 
       - name: Commit
         run: |
-          git add **/pom.xml
-          git add **/web/package.json || echo "No package.json found"
-          git add **/web/package-lock.json || echo "No package-lock.json found"
+          git add $(find . -name 'pom.xml')
+          git add $(find . -path '**/web/package.json') || echo "No package.json found"
+          git add $(find . -path '**/web/package-lock.json') || echo "No package-lock.json found"
 
           # only commit if there are changes
           git diff-index --quiet HEAD || git commit \
