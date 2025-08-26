@@ -98,7 +98,14 @@ jobs:
       STAGING_REPO_DOCKER: ${{ env.STAGING_REPO_DOCKER }}
       STAGING_REPO_HELM: ${{ env.STAGING_REPO_HELM }}
       STAGING_REPO_NPM: ${{ env.STAGING_REPO_NPM }}
+      ALL_ARTIFACTS_VERSION: ${{ steps.tag.outputs.ALL_ARTIFACTS_VERSION }}
     steps:
+      - name: Parse version string
+        id: parse
+        uses: uniport/workflows/.github/actions/parse-version@main
+        with:
+          version: ${{ inputs.version }}
+
       - name: Set Tag Name
         id: tag
         run: |
@@ -112,6 +119,9 @@ jobs:
           TAG_NAME_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_HELM }}"
           TAG_NAME_NPM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_NPM }}"
 
+          VERSION_SUFFIX="${{ steps.parse.outputs.build_date }}-${{ steps.parse.outputs.run_id }}-${{ steps.parse.outputs.commit_sha }}"
+          ALL_ARTIFACTS_VERSION="*-${VERSION_SUFFIX}"
+
           cat >> $GITHUB_OUTPUT <<EOF
           TAG_NAME=$TAG_NAME
           TAG_NAME_MAVEN=$TAG_NAME_MAVEN
@@ -122,6 +132,7 @@ jobs:
           STAGING_REPO_DOCKER=${{ env.STAGING_REPO_DOCKER }}
           STAGING_REPO_HELM=${{ env.STAGING_REPO_HELM }}
           STAGING_REPO_NPM=${{ env.STAGING_REPO_NPM }}
+          ALL_ARTIFACTS_VERSION=$ALL_ARTIFACTS_VERSION
           EOF
 
       - name: Summary
@@ -139,6 +150,7 @@ jobs:
           - **STAGING_REPO_DOCKER**: \`${{ env.STAGING_REPO_DOCKER }}\`
           - **STAGING_REPO_HELM**: \`${{ env.STAGING_REPO_HELM }}\`
           - **STAGING_REPO_NPM**: \`${{ env.STAGING_REPO_NPM }}\`
+          - **ALL_ARTIFACTS_VERSION**: \`${{ steps.tag.outputs.ALL_ARTIFACTS_VERSION }}\`
           EOF
 
   tag_mvn:
@@ -189,7 +201,7 @@ jobs:
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_MAVEN }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_MAVEN }}
-      version: ${{ inputs.version }}
+      version: ${{ needs.tag.outputs.ALL_ARTIFACTS_VERSION }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
