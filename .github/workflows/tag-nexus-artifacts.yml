@@ -213,7 +213,7 @@ jobs:
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_DOCKER }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_DOCKER }}
-      version: ${{ inputs.version }}
+      version: '"${{ inputs.version }}"'
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
@@ -225,7 +225,7 @@ jobs:
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_HELM }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_HELM }}
-      version: ${{ inputs.version }}
+      version: '"${{ inputs.version }}"'
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
@@ -237,6 +237,6 @@ jobs:
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_NPM }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_NPM }}
-      version: ${{ inputs.version }}
+      version: '"${{ inputs.version }}"'
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}

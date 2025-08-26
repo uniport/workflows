@@ -39,6 +39,10 @@ env:
   NEXUS3_URL: ${{ vars.NEXUS3_URL }}
   NEXUS3_USER: ${{ vars.NEXUS3_USER }}
 
+# To associate a tag with components, the components are search based on the repository and version
+# The repository is searched for an EXACT match (surrounded by quotes)
+# The version supports all supported search patterns as provided by nexus i.e. wildcards, tokens and exact matches
+# See: https://help.sonatype.com/en/searching-for-components.html#keyword-search-query-string
 jobs:
   associate:
     name: Tag Associate
@@ -49,4 +53,4 @@ jobs:
         run: |
           curl -fSs -X POST \
           -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
-          '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository="${{ inputs.repo_id }}"&version="${{ inputs.version }}"'
+          '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository="${{ inputs.repo_id }}"&version=${{ inputs.version }}'
