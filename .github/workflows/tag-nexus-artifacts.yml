@@ -197,7 +197,7 @@ jobs:
     name: Associate Components (maven)
     uses: ./.github/workflows/nexus-tag-associate.yml
     needs: [tag, tag_mvn]
-    if: ${{ inputs.tag_maven }}
+    if: ${{ inputs.tag_maven && needs.tag.outputs.STAGING_REPO_MAVEN != '' }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_MAVEN }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_MAVEN }}
@@ -209,7 +209,7 @@ jobs:
     name: Associate Components (docker)
     uses: ./.github/workflows/nexus-tag-associate.yml
     needs: [tag, tag_docker]
-    if: ${{ inputs.tag_docker }}
+    if: ${{ inputs.tag_docker && needs.tag.outputs.STAGING_REPO_DOCKER != '' }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_DOCKER }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_DOCKER }}
@@ -221,7 +221,7 @@ jobs:
     name: Associate Components (helm)
     uses: ./.github/workflows/nexus-tag-associate.yml
     needs: [tag, tag_helm]
-    if: ${{ inputs.tag_helm }}
+    if: ${{ inputs.tag_helm && needs.tag.outputs.STAGING_REPO_HELM != '' }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_HELM }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_HELM }}
@@ -233,10 +233,74 @@ jobs:
     name: Associate Components (npm)
     uses: ./.github/workflows/nexus-tag-associate.yml
     needs: [tag, tag_npm]
-    if: ${{ inputs.tag_npm }}
+    if: ${{ inputs.tag_npm && needs.tag.outputs.STAGING_REPO_NPM != '' }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_NPM }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_NPM }}
       version: '"${{ inputs.version }}"'
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+
+  warn_mvn:
+    name: ⚠️ Maven staging repo not configured
+    runs-on: ubuntu-latest
+    needs: [tag]
+    if: ${{ inputs.tag_maven && needs.tag.outputs.STAGING_REPO_MAVEN == '' }}
+    steps:
+      - name: Show warning
+        run: |
+          echo "::warning title=Maven Staging Repository Missing::STAGING_REPO_MAVEN variable is not configured. Maven components will be tagged but not associated."
+          echo "**⚠️ Warning:** Maven staging repository is not configured!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The Maven tag \`${{ needs.tag.outputs.TAG_NAME_MAVEN }}\` was created successfully," >> $GITHUB_STEP_SUMMARY
+          echo "but components could not be associated because \`STAGING_REPO_MAVEN\` variable is empty." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please configure the \`STAGING_REPO_MAVEN\` repository variable to enable component association." >> $GITHUB_STEP_SUMMARY
+
+  warn_docker:
+    name: ⚠️ Docker staging repo not configured
+    runs-on: ubuntu-latest
+    needs: [tag]
+    if: ${{ inputs.tag_docker && needs.tag.outputs.STAGING_REPO_DOCKER == '' }}
+    steps:
+      - name: Show warning
+        run: |
+          echo "::warning title=Docker Staging Repository Missing::STAGING_REPO_DOCKER variable is not configured. Docker components will be tagged but not associated."
+          echo "**⚠️ Warning:** Docker staging repository is not configured!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The Docker tag \`${{ needs.tag.outputs.TAG_NAME_DOCKER }}\` was created successfully," >> $GITHUB_STEP_SUMMARY
+          echo "but components could not be associated because \`STAGING_REPO_DOCKER\` variable is empty." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please configure the \`STAGING_REPO_DOCKER\` repository variable to enable component association." >> $GITHUB_STEP_SUMMARY
+
+  warn_helm:
+    name: ⚠️ Helm staging repo not configured
+    runs-on: ubuntu-latest
+    needs: [tag]
+    if: ${{ inputs.tag_helm && needs.tag.outputs.STAGING_REPO_HELM == '' }}
+    steps:
+      - name: Show warning
+        run: |
+          echo "::warning title=Helm Staging Repository Missing::STAGING_REPO_HELM variable is not configured. Helm components will be tagged but not associated."
+          echo "**⚠️ Warning:** Helm staging repository is not configured!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The Helm tag \`${{ needs.tag.outputs.TAG_NAME_HELM }}\` was created successfully," >> $GITHUB_STEP_SUMMARY
+          echo "but components could not be associated because \`STAGING_REPO_HELM\` variable is empty." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please configure the \`STAGING_REPO_HELM\` repository variable to enable component association." >> $GITHUB_STEP_SUMMARY
+
+  warn_npm:
+    name: ⚠️ NPM staging repo not configured
+    runs-on: ubuntu-latest
+    needs: [tag]
+    if: ${{ inputs.tag_npm && needs.tag.outputs.STAGING_REPO_NPM == '' }}
+    steps:
+      - name: Show warning
+        run: |
+          echo "::warning title=NPM Staging Repository Missing::STAGING_REPO_NPM variable is not configured. NPM components will be tagged but not associated."
+          echo "**⚠️ Warning:** NPM staging repository is not configured!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The NPM tag \`${{ needs.tag.outputs.TAG_NAME_NPM }}\` was created successfully," >> $GITHUB_STEP_SUMMARY
+          echo "but components could not be associated because \`STAGING_REPO_NPM\` variable is empty." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please configure the \`STAGING_REPO_NPM\` repository variable to enable component association." >> $GITHUB_STEP_SUMMARY
