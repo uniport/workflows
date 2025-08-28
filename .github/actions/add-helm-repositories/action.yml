@@ -5,6 +5,10 @@ inputs:
     description: 'The username for accessing Helm repositories'
   password:
     description: 'The password for accessing Helm repositories'
+  force-update:
+    description: 'Whether to force update the repositories'
+    required: false
+    default: 'true'
   repositories:
     description: 'A JSON list of Helm repository objects with `name` and `url` keys.'
     required: false
@@ -30,5 +34,12 @@ runs:
         echo '${{ inputs.repositories }}' | jq -c '.[]' | while IFS= read -r repo_json; do
           repo_name=$(echo "$repo_json" | jq -r .name)
           repo_url=$(echo "$repo_json" | jq -r .url)
-          helm repo add "$repo_name" "$repo_url" --username "${{ inputs.username }}" --password "${{ inputs.password }}"
+
+          # Build the helm command with conditional --force-update flag
+          helm_cmd="helm repo add \"$repo_name\" \"$repo_url\" --username \"${{ inputs.username }}\" --password \"${{ inputs.password }}\""
+          if [[ "${{ inputs.force-update }}" == "true" ]]; then
+            helm_cmd="$helm_cmd --force-update"
+          fi
+
+          eval "$helm_cmd"
         done
