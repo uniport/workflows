@@ -20,10 +20,22 @@ fi
 # parameters
 readonly PACKAGE_VERSION="$1"
 
-# version variables
-VERSION=$(echo "$PACKAGE_VERSION" | sed -rE 's/([0-9]+\.[0-9]+\.[0-9]+)(\-.*)/\1/')
-# increase minor version by one
-NEXT_VERSION=$(echo "$PACKAGE_VERSION" | sed -rE 's/([0-9]+)\.([0-9]+)\.([0-9]+)(.*)/echo \1.$(echo "$((\2+1))").\3/e')
+# parse version
+VERSION_REGEX="([0-9])+\.([0-9])+\.([0-9])+(\-.*)"
+MAJOR=$(echo "$PACKAGE_VERSION" | sed -rE "s/$VERSION_REGEX/\1/")
+MINOR=$(echo "$PACKAGE_VERSION" | sed -rE "s/$VERSION_REGEX/\2/")
+PATCH=$(echo "$PACKAGE_VERSION" | sed -rE "s/$VERSION_REGEX/\3/")
+VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+# increment minor/patch
+NEXT_MINOR="${MINOR}"
+NEXT_PATCH="${PATCH}"
+if [[ "${PATCH}" -eq 0 ]]; then
+    NEXT_MINOR="$(( MINOR + 1 ))"
+else
+    NEXT_PATCH="$(( PATCH + 1 ))"
+fi
+NEXT_VERSION="${MAJOR}.${NEXT_MINOR}.${NEXT_PATCH}"
 
 CHANGELOG_FILE="CHANGELOG.md"
 
