@@ -32,7 +32,7 @@ function updateNEXTVersion() {
     # Update the name of the next version
     local id=$1
 
-    curl \
+    curl --silent --fail --show-error \
         -X PUT \
         -H "Authorization: Basic ${BASIC_AUTH_TOKEN}" \
         -H 'Accept: application/json' \
@@ -47,7 +47,7 @@ function updateNEXTVersion() {
 function createNewVersion() {
     local versionName=$1
 
-    curl \
+    curl --silent --fail --show-error \
         -X POST \
         -H "Authorization: Basic ${BASIC_AUTH_TOKEN}" \
         -H 'Accept: application/json' \
@@ -65,7 +65,7 @@ function releaseVersion() {
     local releaseDate
     releaseDate=$(LC_ALL=en_US.utf8 date +%F)
 
-    curl \
+    curl --silent --fail --show-error \
         -X PUT \
         -H "Authorization: Basic ${BASIC_AUTH_TOKEN}" \
         -H 'Accept: application/json' \
