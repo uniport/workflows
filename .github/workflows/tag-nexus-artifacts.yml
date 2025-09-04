@@ -142,10 +142,10 @@ jobs:
           ## Setup Tag Name Details
           ### Outputs
           - **TAG_NAME**: \`${{ steps.tag.outputs.TAG_NAME }}\`
-          - **TAG_NAME_MAVEN**: \`$${{ steps.tag.outputs.TAG_NAME_MAVEN }}\`
-          - **TAG_NAME_DOCKER**: \`$${{ steps.tag.outputs.TAG_NAME_DOCKER }}\`
-          - **TAG_NAME_HELM**: \`$${{ steps.tag.outputs.TAG_NAME_HELM }}\`
-          - **TAG_NAME_NPM**: \`$${{ steps.tag.outputs.TAG_NAME_NPM }}\`
+          - **TAG_NAME_MAVEN**: \`${{ steps.tag.outputs.TAG_NAME_MAVEN }}\`
+          - **TAG_NAME_DOCKER**: \`${{ steps.tag.outputs.TAG_NAME_DOCKER }}\`
+          - **TAG_NAME_HELM**: \`${{ steps.tag.outputs.TAG_NAME_HELM }}\`
+          - **TAG_NAME_NPM**: \`${{ steps.tag.outputs.TAG_NAME_NPM }}\`
           - **STAGING_REPO_MAVEN**: \`${{ env.STAGING_REPO_MAVEN }}\`
           - **STAGING_REPO_DOCKER**: \`${{ env.STAGING_REPO_DOCKER }}\`
           - **STAGING_REPO_HELM**: \`${{ env.STAGING_REPO_HELM }}\`
