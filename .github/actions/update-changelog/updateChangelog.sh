@@ -21,7 +21,7 @@ fi
 readonly PACKAGE_VERSION="$1"
 
 # parse version
-VERSION_REGEX="([0-9])+\.([0-9])+\.([0-9])+(\-.*)"
+VERSION_REGEX="([0-9]+)\.([0-9]+)\.([0-9]+)(\-.*)"
 MAJOR=$(echo "$PACKAGE_VERSION" | sed -rE "s/$VERSION_REGEX/\1/")
 MINOR=$(echo "$PACKAGE_VERSION" | sed -rE "s/$VERSION_REGEX/\2/")
 PATCH=$(echo "$PACKAGE_VERSION" | sed -rE "s/$VERSION_REGEX/\3/")
