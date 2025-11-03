@@ -87,7 +87,7 @@ env:
 
 jobs:
   tag:
-    name: Setup
+    name: setup
     runs-on: ubuntu-latest
     outputs:
       TAG_NAME: ${{ steps.tag.outputs.TAG_NAME }}
