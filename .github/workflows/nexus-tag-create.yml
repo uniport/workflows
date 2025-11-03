@@ -25,7 +25,7 @@ env:
 
 jobs:
   tag:
-    name: Tag Create
+    name: create
     runs-on: ubuntu-latest
     steps:
       # https://help.sonatype.com/en/tagging.html

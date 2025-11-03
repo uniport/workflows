@@ -45,7 +45,7 @@ env:
 # See: https://help.sonatype.com/en/searching-for-components.html#keyword-search-query-string
 jobs:
   associate:
-    name: Tag Associate
+    name: associate
     runs-on: ubuntu-latest
     steps:
       # https://help.sonatype.com/en/tagging.html
