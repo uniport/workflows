@@ -1,0 +1,70 @@
+name: Build Pipeline
+run-name: 'Main build workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 2 * * *"  # Runs at 02:00 UTC every day
+  workflow_dispatch:
+    inputs:
+      deploy_to_dev:
+        description: 'Deploy to development environment'
+        required: true
+        type: boolean
+        default: true
+      update_archetype:
+        description: 'Whether to update the uniport archetype or not'
+        required: true
+        type: boolean
+        default: true
+
+# Prevent running builds for the same branch in parallel
+# New workflows will cancel existing workflows…
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maven:
+    name: maven.yml
+    uses: ./.github/workflows/maven.yml
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+      NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
+      MACDUFF_KEYCHAIN_PASSWORD: ${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}
+
+  deploy:
+    name: Uniport deploy-dev.yml
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.deploy_to_dev }}
+    needs: [maven]
+    uses: uniport/workflows/.github/workflows/deploy-dev.yml@main
+    with:
+      version: ${{ needs.maven.outputs.VERSION }}
+      component_name: conversation
+    secrets:
+      UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
+
+  archetype:
+    name: Uniport archetype.yml
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
+    needs: [maven]
+    uses: uniport/workflows/.github/workflows/update-archetype.yml@main
+    with:
+      version: ${{ needs.maven.outputs.VERSION }}
+      component_name: conversation
+    secrets:
+      UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
+
+  tag:
+    name: Uniport nexus.yml
+    needs: [maven]
+    uses: uniport/workflows/.github/workflows/tag-nexus-artifacts.yml@main
+    with:
+      version: ${{ needs.maven.outputs.VERSION }}
+      group_id: ${{ needs.maven.outputs.GROUP_ID }}
+      tag_docker: true
+      tag_maven: true
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}

@@ -1,0 +1,153 @@
+name: Maven Build
+run-name: "Maven build workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}"
+
+# This workflow is designed to be used in another workflow (via call)
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      NEXUS3_PW:
+        required: true
+      NEXUS_NPM_TOKEN_READ_ONLY:
+        required: true
+      MACDUFF_KEYCHAIN_PASSWORD:
+        required: true
+    outputs:
+      VERSION:
+        description: "Build version"
+        value: ${{ jobs.build.outputs.VERSION }}
+      GROUP_ID:
+        description: "The maven groupId attribute"
+        value: ${{ jobs.build.outputs.GROUP_ID }}
+      docs_artifact_name:
+        description: "The name of the docs artifact uploaded with actions/upload-artifact"
+        value: ${{ jobs.build.outputs.docs_artifact_name }}
+      docs_artifact_path:
+        description: "The path of the docs artifact uploaded with actions/upload-artifact"
+        value: ${{ jobs.build.outputs.docs_artifact_path }}
+      run_id:
+        description: "The run-id of the job that uploaded the build artifact"
+        value: ${{ github.run_id }}
+      branch_name_slug:
+        description: "The slug of the current branch"
+        value: ${{ jobs.build.outputs.branch_name_slug }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
+      CI_AUTH_PSW: ${{ secrets.NEXUS3_PW }}
+      HELM_REGISTRY_CONFIG: "~/.docker/config.json"
+    outputs:
+      VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+      GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
+      docs_artifact_name: ${{ steps.docs-vars.outputs.ARTIFACT_NAME }}
+      docs_artifact_path: ${{ steps.docs-vars.outputs.ARTIFACT_PATH }}
+      run_id: ${{ steps.docs-vars.outputs.RUN_ID }}
+      branch_name_slug: ${{ steps.slug.outputs.branch-name-slug }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          # Need to fetch everything, otherwise "spotless-maven-plugin" fails because we reference origin/main branch in the configuration
+          fetch-depth: 0
+
+      - name: Setup Maven Variables
+        id: vars
+        uses: uniport/workflows/.github/actions/setup-maven-build-variables@main
+
+      - uses: gacts/github-slug@v1
+        id: slug
+
+      - name: Setup Docs Variable
+        id: docs-vars
+        shell: bash
+        run: |
+          cat >> $GITHUB_OUTPUT <<EOF
+          ARTIFACT_NAME=uniport-gateway-docs-${{ github.sha }}
+          ARTIFACT_PATH=build.zip
+          RUN_ID=${{ github.run_id }}
+          EOF
+
+      - name: Setup Java
+        uses: uniport/workflows/.github/actions/setup-java@main
+        with:
+          architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
+          cache-maven: ${{ !contains(runner.name, 'macduff') }}
+
+      - name: Unlock keychain
+        if: ${{ contains(runner.name, 'macduff') }}
+        run: |
+          security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
+
+      - name: Setup Helm
+        uses: uniport/workflows/.github/actions/add-helm-repositories@main
+        with:
+          username: ${{ env.CI_AUTH_USR }}
+          password: ${{ env.CI_AUTH_PSW }}
+
+      - name: Login to Nexus Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: uniportcr.artifacts.inventage.com
+          username: ${{ env.CI_AUTH_USR }}
+          password: ${{ env.CI_AUTH_PSW }}
+          logout: ${{ !contains(runner.name, 'macduff') }}
+
+      - name: Setup NPM Access
+        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@main
+        with:
+          token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
+          repository: inventage-portal-npm-group
+          auth-file: docs/src/main/mkdocs/.npmrc
+
+      - name: Set version
+        uses: uniport/workflows/.github/actions/set-maven-project-version@main
+        with:
+          version: ${{ steps.vars.outputs.RC_VERSION }}
+          settings-file: .github/settings.xml
+
+      - name: Maven build
+        run: |
+          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true -Djava.io.tmpdir=. deploy
+
+      - name: Checkstyle
+        run: |
+          mvn -B --settings .github/settings.xml initialize checkstyle:check
+
+      - name: Spotbugs
+        run: |
+          mvn -B --settings .github/settings.xml initialize spotbugs:check
+
+      - name: Check uncommitted code
+        uses: uniport/workflows/.github/actions/ensure-no-uncommitted-code@main
+
+      - name: Zip dist directory for artifacts
+        working-directory: docs/src/main/mkdocs
+        run: |
+          zip -r ${{ github.workspace }}/${{ steps.docs-vars.outputs.ARTIFACT_PATH }} ./build
+
+      - name: Upload artifact for other jobs
+        id: upload
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ steps.docs-vars.outputs.ARTIFACT_NAME }}
+          path: ${{ steps.docs-vars.outputs.ARTIFACT_PATH }}
+          compression-level: 0
+          retention-days: 7
+
+      - name: Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          ## Maven Build
+          This workflow ran successfully on **$(date)**.
+          ### Outputs
+          - **VERSION**: \`${{ steps.vars.outputs.RC_VERSION }}\`
+          - **GROUP_ID**: \`${{ steps.vars.outputs.GROUP_ID }}\`
+          - **docs_artifact_name**: \`${{ steps.docs-vars.outputs.ARTIFACT_NAME }}\`
+          - **docs_artifact_path**: \`${{ steps.docs-vars.outputs.ARTIFACT_PATH }}\`
+          - **branch_name_slug**: \`${{ steps.slug.outputs.branch-name-slug }}\`
+          EOF
