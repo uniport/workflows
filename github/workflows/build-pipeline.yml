@@ -1,14 +1,8 @@
-name: Build Pipeline
+name: Common Build Pipeline
 run-name: 'Main build workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
 
 on:
-  push:
-    branches:
-      - master
-      - main
-  schedule:
-    - cron: "0 2 * * *"  # Runs at 02:00 UTC every day
-  workflow_dispatch:
+  workflow_call:
     inputs:
       deploy_to_dev:
         description: 'Deploy to development environment'
@@ -20,6 +14,11 @@ on:
         required: true
         type: boolean
         default: true
+      component_name:
+        description: 'Component name for deployment and archetype'
+        required: true
+        type: string
+
 
 # Prevent running builds for the same branch in parallel
 # New workflows will cancel existing workflows…
@@ -43,7 +42,7 @@ jobs:
     uses: uniport/workflows/.github/workflows/deploy-dev.yml@main
     with:
       version: ${{ needs.maven.outputs.VERSION }}
-      component_name: organisation
+      component_name: ${{ inputs.component_name }}
     secrets:
       UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
 
@@ -54,7 +53,7 @@ jobs:
     uses: uniport/workflows/.github/workflows/update-archetype.yml@main
     with:
       version: ${{ needs.maven.outputs.VERSION }}
-      component_name: organisation
+      component_name: ${{ inputs.component_name }}
     secrets:
       UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
 
