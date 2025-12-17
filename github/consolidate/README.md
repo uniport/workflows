@@ -38,8 +38,27 @@ Vor Konsolidierung:
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
     ```
 
+#### deploy_to_dev might be ignored
+  - Current condition
+    ```yaml
+      if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.deploy_to_dev }}
+    ```
+    Problem here, the deployment runs even if deploy_to_dev is false because push or schedule have precedence. 
+  - Should this be:
+    ```yaml
+    if: ${{ inputs.deploy_to_dev && (github.event_name == 'push' || github.event_name == 'schedule') }}
+    ```
 
-
+#### update_archetype might be ignored
+- Current condition
+  ```yaml
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
+  ```
+  Problem here, the deployment runs even if deploy_to_dev is false because push or schedule have precedence.
+- Should this be:
+  ```yaml
+  if: ${{ inputs.update_archetype && (github.event_name == 'push' || github.event_name == 'schedule') }}
+  ```
 
 Workflow: Maven-Build
 ---
@@ -68,3 +87,26 @@ Vor Konsolidierung:
    ```yaml
     if: ${{ secrets.NEXUS_NPM_TOKEN_WRITE != '' }}
     ```
+ - uniport-gateway_main.yaml Don't add the docs section to the Common Workflow. To specific. Leave it at the calling workflow.
+   ```yaml
+   docs:
+    name: Deploy Docs (main)
+    needs: [build]
+    uses: ./.github/workflows/deploy-docs.yml
+    # Do not deploy on forks
+    if: ${{ !github.repository.fork }}
+    permissions:
+      actions: read
+      statuses: write
+      pull-requests: write
+      deployments: write
+    secrets:
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    with:
+      alias: ${{ needs.build.outputs.branch_name_slug }}
+      artifact_name: ${{ needs.build.outputs.docs_artifact_name }}
+      artifact_path: ${{ needs.build.outputs.docs_artifact_path }}
+      run_id: ${{ needs.build.outputs.run_id }}
+      environment: docs
+   ```

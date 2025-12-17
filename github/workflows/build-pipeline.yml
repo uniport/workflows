@@ -4,20 +4,52 @@ run-name: 'Main build workflow #${{ github.run_number }} triggered by ${{ github
 on:
   workflow_call:
     inputs:
-      deploy_to_dev:
-        description: 'Deploy to development environment'
-        required: true
-        type: boolean
-        default: true
-      update_archetype:
-        description: 'Whether to update the uniport archetype or not'
-        required: true
-        type: boolean
-        default: true
+      # === Required ===
       component_name:
         description: 'Component name for deployment and archetype'
         required: true
         type: string
+
+      # === Deployment Options ===
+      deploy_to_dev:
+        description: 'Deploy to development environment'
+        required: false
+        type: boolean
+        default: true
+      deploy_branch:
+        description: 'Branch to use in deployment repository'
+        required: false
+        type: string
+        default: 'main'
+
+      # === Archetype Options ===
+      update_archetype:
+        description: 'Whether to update the uniport archetype'
+        required: false
+        type: boolean
+        default: true
+
+      # === Tagging Options ===
+      tag_docker:
+        description: 'Tag Docker artifacts in Nexus'
+        required: false
+        type: boolean
+        default: true
+      tag_maven:
+        description: 'Tag Maven artifacts in Nexus'
+        required: false
+        type: boolean
+        default: true
+      tag_npm:
+        description: 'Tag NPM artifacts in Nexus'
+        required: false
+        type: boolean
+        default: false
+      tag_helm:
+        description: 'Tag Helm artifacts in Nexus'
+        required: false
+        type: boolean
+        default: false
     secrets:
       NEXUS3_PW:
         required: true
@@ -39,26 +71,28 @@ concurrency:
 
 jobs:
   maven:
-    name: maven.yml
+    name: Maven Build
     uses: ./.github/workflows/maven.yml
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
       NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
       MACDUFF_KEYCHAIN_PASSWORD: ${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}
+      NEXUS_NPM_TOKEN_WRITE: ${{ secrets.NEXUS_NPM_TOKEN_WRITE }}
 
   deploy:
-    name: Uniport deploy-dev.yml
+    name: Deploy to Development
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.deploy_to_dev }}
     needs: [maven]
     uses: uniport/workflows/.github/workflows/deploy-dev.yml@main
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       component_name: ${{ inputs.component_name }}
+      branch: ${{ inputs.deploy_branch }}
     secrets:
       UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
 
   archetype:
-    name: Uniport archetype.yml
+    name: Update Archetype
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
     needs: [maven]
     uses: uniport/workflows/.github/workflows/update-archetype.yml@main
@@ -69,13 +103,16 @@ jobs:
       UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
 
   tag:
-    name: Uniport nexus.yml
+    name: Tag Nexus Artifacts
+    if: ${{ inputs.tag_docker || inputs.tag_maven || inputs.tag_npm || inputs.tag_helm}}
     needs: [maven]
     uses: uniport/workflows/.github/workflows/tag-nexus-artifacts.yml@main
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       group_id: ${{ needs.maven.outputs.GROUP_ID }}
-      tag_docker: true
-      tag_maven: true
+      tag_docker: ${{ inputs.tag_docker }}
+      tag_maven: ${{ inputs.tag_maven }}
+      tag_npm: ${{ inputs.tag_npm }}
+      tag_helm: ${{ inputs.tag_helm }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
