@@ -24,6 +24,23 @@ Vor Konsolidierung:
 [uniport-gateway-build]: https://github.com/uniport/uniport-gateway/blob/main/.github/workflows/main.yaml
 [dashboard-build]: https://github.com/uniport/dashboard/blob/master/.github/workflows/build-pipeline.yml
 
+
+### Findings
+- [dashboard_build-pipeline.yml](workflow_Build-Pipeline/dashboard_build-pipeline.yml)
+  - Current condition
+    ```yaml
+    archetype:
+      name: Uniport archetype.yml
+      if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.deploy_to_dev }}
+    ```
+  - Should this be:
+    ```yaml
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
+    ```
+
+
+
+
 Workflow: Maven-Build
 ---
 
@@ -44,3 +61,10 @@ Vor Konsolidierung:
 [notification-mvn]: https://github.com/uniport/notification/blob/master/.github/workflows/build.yml
 [uniport-gateway-mvn]: https://github.com/uniport/uniport-gateway/blob/main/.github/workflows/build.yml
 [dashboard-mvn]: https://github.com/uniport/dashboard/blob/master/.github/workflows/maven.yml
+
+
+ ### Notes
+ - NEXUS_NPM_TOKEN_WRITE will be optional. Use: 
+   ```yaml
+    if: ${{ secrets.NEXUS_NPM_TOKEN_WRITE != '' }}
+    ```

@@ -18,6 +18,17 @@ on:
         description: 'Component name for deployment and archetype'
         required: true
         type: string
+    secrets:
+      NEXUS3_PW:
+        required: true
+      NEXUS_NPM_TOKEN_READ_ONLY:
+        required: true
+      MACDUFF_KEYCHAIN_PASSWORD:
+        required: true
+      UNIPORT_APP_PRIVATE_KEY:
+        required: true
+      NEXUS_NPM_TOKEN_WRITE:
+        required: false
 
 
 # Prevent running builds for the same branch in parallel
