@@ -1,0 +1,120 @@
+name: maven.yml
+run-name: 'Maven build workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      NEXUS3_PW:
+        required: true
+      NEXUS_NPM_TOKEN_READ_ONLY:
+        required: true
+      MACDUFF_KEYCHAIN_PASSWORD:
+        required: true
+    outputs:
+      VERSION:
+        description: 'Build version'
+        value: ${{ jobs.maven.outputs.VERSION }}
+      GROUP_ID:
+        description: 'The maven groupId attribute'
+        value: ${{ jobs.maven.outputs.GROUP_ID }}
+
+env:
+  DOCKER_CONFIG_DIRECTORY: "${{ github.workspace }}/.docker"
+
+jobs:
+  maven:
+    name: Deploy
+#    runs-on: ubuntu-latest
+    runs-on: macduff
+    timeout-minutes: 60
+    env:
+      CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
+      CI_AUTH_PSW: ${{ secrets.NEXUS3_PW }}
+      HELM_REGISTRY_CONFIG: "~/.docker/config.json"
+    outputs:
+      VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+      GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          # Need to fetch everything, otherwise "spotless-maven-plugin" fails because we reference origin/master branch in the configuration
+          fetch-depth: 0
+
+      - name: Setup Variables
+        id: vars
+        uses: uniport/workflows/.github/actions/setup-maven-build-variables@main
+
+      - name: Disable man-db triggers
+        uses: uniport/workflows/.github/actions/disable-man-db-triggers@main
+
+      - name: Setup Java
+        uses: uniport/workflows/.github/actions/setup-java@main
+        with:
+          architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
+          cache-maven: ${{ !contains(runner.name, 'macduff') }}
+
+      - name: Unlock keychain
+        if: ${{ contains(runner.name, 'macduff') }}
+        run: |
+          security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
+
+      - name: Setup Helm
+        uses: uniport/workflows/.github/actions/add-helm-repositories@main
+        with:
+          username: ${{ env.CI_AUTH_USR }}
+          password: ${{ env.CI_AUTH_PSW }}
+
+      - name: Login to Nexus Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: uniportcr.artifacts.inventage.com
+          username: ${{ env.CI_AUTH_USR }}
+          password: ${{ env.CI_AUTH_PSW }}
+          logout: ${{ !contains(runner.name, 'macduff') }}
+
+      - name: Setup NPM Access
+        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@main
+        with:
+          token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
+          repository: inventage-portal-npm-group
+          auth-file: frontend/src/main/web/.npmrc
+
+      - name: Set version
+        uses: uniport/workflows/.github/actions/set-maven-project-version@main
+        with:
+          version: ${{ steps.vars.outputs.RC_VERSION }}
+          settings-file: .github/settings.xml
+          script: true
+
+      - name: Copy .docker directory
+        run: |
+          cp -Rpf ~/.docker ${{ env.DOCKER_CONFIG_DIRECTORY }}
+
+      - name: Maven build
+        run: |
+          mvn -B -V --no-transfer-progress --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
+        env:
+          PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+
+      # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
+      - name: Checkstyle
+        run: |
+          mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
+
+      # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
+      - name: Spotbugs
+        run: |
+          mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
+
+      - name: Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Maven Build
+          This workflow ran successfully on **$(date)**.
+          ### Outputs
+          - **VERSION**: \`${{ steps.vars.outputs.RC_VERSION }}\`
+          - **GROUP_ID**: \`${{ steps.vars.outputs.GROUP_ID }}\`
+          EOF
