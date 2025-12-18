@@ -7,6 +7,8 @@ on:
     secrets:
       NEXUS3_PW:
         required: true
+      NEXUS_NPM_TOKEN_WRITE:
+        required: false
       NEXUS_NPM_TOKEN_READ_ONLY:
         required: true
       MACDUFF_KEYCHAIN_PASSWORD:
@@ -81,6 +83,14 @@ jobs:
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
           repository: inventage-portal-npm-group
+          auth-file: frontend/src/main/web/.npmrc
+
+      - name: Setup NPM Access (staging)
+        if: ${{ secrets.NEXUS_NPM_TOKEN_WRITE != '' }}
+        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@main
+        with:
+          token: ${{ secrets.NEXUS_NPM_TOKEN_WRITE }}
+          repository: inventage-portal-npm-staging
           auth-file: frontend/src/main/web/.npmrc
 
       - name: Set version

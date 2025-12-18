@@ -38,7 +38,7 @@ Vor Konsolidierung:
 | component \ template                   | wie organisation | wie base | weder noch | gemerged |
 |----------------------------------------|:----------------:|:-------:|------------|----------|
 | [organisation][organisation-mvn]       |        ✅         |         |            |          |
-| [base][base-mvn]                       |                  |    ✅    |            |          |
+| [base][base-mvn]                       |                  |    ✅    |            |      ✅    |
 | [conversation][conversation-mvn]       |        ✅         |         |            |     ✅     |
 | [notification][notification-mvn]       |        ✅         |        |            |     ✅     |
 | [uniport-gateway][uniport-gateway-mvn] |                  |        |      ✅      |          |
