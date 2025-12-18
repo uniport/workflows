@@ -24,6 +24,8 @@ Vor Konsolidierung:
 [uniport-gateway-build]: https://github.com/uniport/uniport-gateway/blob/main/.github/workflows/main.yaml
 [dashboard-build]: https://github.com/uniport/dashboard/blob/master/.github/workflows/build-pipeline.yml
 
+Nach Konsolidierung:  
+[build-pipeline.yml](../workflows/build-pipeline.yml)
 
 ### Findings
 
@@ -55,7 +57,9 @@ Vor Konsolidierung:
    ```yaml
     if: ${{ secrets.NEXUS_NPM_TOKEN_WRITE != '' }}
     ```
- - uniport-gateway_main.yaml Don't add the docs section to the Common Workflow. To specific. Leave it at the calling workflow.
+ - uniport-gateway_main.yaml
+
+   Don't add the docs section to the Common Workflow. To specific. Leave it at the calling workflow.
    ```yaml
    docs:
     name: Deploy Docs (main)
