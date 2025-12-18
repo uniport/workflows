@@ -35,14 +35,14 @@ Workflow: Maven-Build
 
 Vor Konsolidierung:
 
-| component \ template                   | wie organisation | wie base | weder noch |
-|----------------------------------------|:----------------:|:-------:|------------|
-| [organisation][organisation-mvn]       |        ✅         |         |            |
-| [base][base-mvn]                       |                  |    ✅    |            |
-| [conversation][conversation-mvn]       |        ✅         |         |            |
-| [notification][notification-mvn]       |        ✅         |        |            |
-| [uniport-gateway][uniport-gateway-mvn] |                  |        |      ✅      |
-| [dashboard][dashboard-mvn]             |        ✅         |         |            |
+| component \ template                   | wie organisation | wie base | weder noch | gemerged |
+|----------------------------------------|:----------------:|:-------:|------------|----------|
+| [organisation][organisation-mvn]       |        ✅         |         |            |          |
+| [base][base-mvn]                       |                  |    ✅    |            |          |
+| [conversation][conversation-mvn]       |        ✅         |         |            |     ✅     |
+| [notification][notification-mvn]       |        ✅         |        |            |          |
+| [uniport-gateway][uniport-gateway-mvn] |                  |        |      ✅      |          |
+| [dashboard][dashboard-mvn]             |        ✅         |         |            |          |
 
 [organisation-mvn]: https://github.com/uniport/organisation/blob/master/.github/workflows/maven.yml
 [base-mvn]: https://github.com/uniport/base/blob/main/.github/workflows/build.yml
@@ -51,6 +51,14 @@ Vor Konsolidierung:
 [uniport-gateway-mvn]: https://github.com/uniport/uniport-gateway/blob/main/.github/workflows/build.yml
 [dashboard-mvn]: https://github.com/uniport/dashboard/blob/master/.github/workflows/maven.yml
 
+### Findings
+ - UI Testcoverage only in organisation and base. Useful for for other Modules too. Do they have a ui? 
+   ```yaml
+      - name: Frontend Test Coverage
+        uses: livewing/lcov-job-summary@v1.2.0
+        with:
+          lcov: frontend/src/main/web/coverage/lcov.info
+    ```
 
  ### Notes
  - NEXUS_NPM_TOKEN_WRITE will be optional. Use: 
