@@ -42,7 +42,7 @@ Vor Konsolidierung:
 | [conversation][conversation-mvn]       |        ✅         |         |            |     ✅     |
 | [notification][notification-mvn]       |        ✅         |        |            |     ✅     |
 | [uniport-gateway][uniport-gateway-mvn] |                  |        |      ✅      |          |
-| [dashboard][dashboard-mvn]             |        ✅         |         |            |          |
+| [dashboard][dashboard-mvn]             |        ✅         |         |            |    ✅      |
 
 [organisation-mvn]: https://github.com/uniport/organisation/blob/master/.github/workflows/maven.yml
 [base-mvn]: https://github.com/uniport/base/blob/main/.github/workflows/build.yml

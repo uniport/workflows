@@ -96,7 +96,7 @@ jobs:
 
       - name: Maven build
         run: |
-          mvn -B -V --no-transfer-progress --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
+          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 
