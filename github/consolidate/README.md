@@ -40,7 +40,7 @@ Vor Konsolidierung:
 | [organisation][organisation-mvn]       |        ✅         |         |            |          |
 | [base][base-mvn]                       |                  |    ✅    |            |          |
 | [conversation][conversation-mvn]       |        ✅         |         |            |     ✅     |
-| [notification][notification-mvn]       |        ✅         |        |            |          |
+| [notification][notification-mvn]       |        ✅         |        |            |     ✅     |
 | [uniport-gateway][uniport-gateway-mvn] |                  |        |      ✅      |          |
 | [dashboard][dashboard-mvn]             |        ✅         |         |            |          |
 
