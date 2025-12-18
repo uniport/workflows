@@ -64,7 +64,7 @@ on:
 
 
 # Prevent running builds for the same branch in parallel
-# New workflows will cancel existing workflows…
+# New workflows will cancel existing workflows
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

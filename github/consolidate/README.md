@@ -26,39 +26,7 @@ Vor Konsolidierung:
 
 
 ### Findings
-- [dashboard_build-pipeline.yml](workflow_Build-Pipeline/dashboard_build-pipeline.yml)
-  - Current condition
-    ```yaml
-    archetype:
-      name: Uniport archetype.yml
-      if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.deploy_to_dev }}
-    ```
-  - Should this be:
-    ```yaml
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
-    ```
 
-#### deploy_to_dev might be ignored
-  - Current condition
-    ```yaml
-      if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.deploy_to_dev }}
-    ```
-    Problem here, the deployment runs even if deploy_to_dev is false because push or schedule have precedence. 
-  - Should this be:
-    ```yaml
-    if: ${{ inputs.deploy_to_dev && (github.event_name == 'push' || github.event_name == 'schedule') }}
-    ```
-
-#### update_archetype might be ignored
-- Current condition
-  ```yaml
-    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
-  ```
-  Problem here, the deployment runs even if deploy_to_dev is false because push or schedule have precedence.
-- Should this be:
-  ```yaml
-  if: ${{ inputs.update_archetype && (github.event_name == 'push' || github.event_name == 'schedule') }}
-  ```
 
 Workflow: Maven-Build
 ---
