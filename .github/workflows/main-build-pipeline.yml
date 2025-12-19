@@ -77,6 +77,8 @@ jobs:
   maven:
     name: Maven Build
     uses: ./.github/workflows/main-maven-build.yml
+    with:
+      has_frontend: ${{ inputs.has_frontend }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
       NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
