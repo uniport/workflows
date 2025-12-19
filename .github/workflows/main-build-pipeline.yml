@@ -9,6 +9,10 @@ on:
         description: 'Component name for deployment and archetype'
         required: true
         type: string
+      has_frontend:
+        description: 'Boolean if the module has a frontend'
+        required: true
+        type: boolean
 
       # === Deployment Options ===
       deploy_to_dev:
