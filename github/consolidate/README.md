@@ -52,7 +52,7 @@ Vor Konsolidierung:
 [dashboard-mvn]: https://github.com/uniport/dashboard/blob/master/.github/workflows/maven.yml
 
 ### Findings
- - UI Testcoverage only in organisation and base. Useful for for other Modules too. Do they have a ui? 
+ - UI Testcoverage only in organisation and base. Useful for other Modules too. Do they have a ui? 
    ```yaml
       - name: Frontend Test Coverage
         uses: livewing/lcov-job-summary@v1.2.0

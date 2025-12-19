@@ -1,153 +1,92 @@
-name: Maven Build
-run-name: "Maven build workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}"
+name: Main Build
+run-name: "Main build workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}"
 
-# This workflow is designed to be used in another workflow (via call)
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
-  workflow_call:
-    secrets:
-      NEXUS3_PW:
+    inputs:
+      deploy_to_dev:
+        description: "Deploy to development environment"
         required: true
-      NEXUS_NPM_TOKEN_READ_ONLY:
+        type: boolean
+        default: true
+      update_archetype:
+        description: "Whether to update the uniport archetype or not"
         required: true
-      MACDUFF_KEYCHAIN_PASSWORD:
-        required: true
-    outputs:
-      VERSION:
-        description: "Build version"
-        value: ${{ jobs.build.outputs.VERSION }}
-      GROUP_ID:
-        description: "The maven groupId attribute"
-        value: ${{ jobs.build.outputs.GROUP_ID }}
-      docs_artifact_name:
-        description: "The name of the docs artifact uploaded with actions/upload-artifact"
-        value: ${{ jobs.build.outputs.docs_artifact_name }}
-      docs_artifact_path:
-        description: "The path of the docs artifact uploaded with actions/upload-artifact"
-        value: ${{ jobs.build.outputs.docs_artifact_path }}
-      run_id:
-        description: "The run-id of the job that uploaded the build artifact"
-        value: ${{ github.run_id }}
-      branch_name_slug:
-        description: "The slug of the current branch"
-        value: ${{ jobs.build.outputs.branch_name_slug }}
+        type: boolean
+        default: true
+  schedule:
+    - cron: "15 2 * * SUN"
+
+# Prevent running builds for the same branch in parallel
+# New workflows will cancel existing workflows…
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    name: Build
-    runs-on: ubuntu-latest
-    env:
-      CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
-      CI_AUTH_PSW: ${{ secrets.NEXUS3_PW }}
-      HELM_REGISTRY_CONFIG: "~/.docker/config.json"
-    outputs:
-      VERSION: ${{ steps.vars.outputs.RC_VERSION }}
-      GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
-      docs_artifact_name: ${{ steps.docs-vars.outputs.ARTIFACT_NAME }}
-      docs_artifact_path: ${{ steps.docs-vars.outputs.ARTIFACT_PATH }}
-      run_id: ${{ steps.docs-vars.outputs.RUN_ID }}
-      branch_name_slug: ${{ steps.slug.outputs.branch-name-slug }}
+    name: Build (main)
+    uses: ./.github/workflows/build.yml
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+      NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
+      MACDUFF_KEYCHAIN_PASSWORD: ${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v5
-        with:
-          # Need to fetch everything, otherwise "spotless-maven-plugin" fails because we reference origin/main branch in the configuration
-          fetch-depth: 0
+  deploy:
+    name: Trigger Deployment (dev)
+    if: ${{ inputs.deploy_to_dev || github.event_name == 'push' || github.event_name == 'schedule' }}
+    needs: [build]
+    uses: uniport/workflows/.github/workflows/deploy-dev.yml@main
+    with:
+      version: ${{ needs.build.outputs.VERSION }}
+      component_name: uniport-gateway
+      branch: main
+    secrets:
+      UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
 
-      - name: Setup Maven Variables
-        id: vars
-        uses: uniport/workflows/.github/actions/setup-maven-build-variables@main
+  archetype:
+    name: Update Archetype
+    if: ${{ inputs.update_archetype || github.event_name == 'push' || github.event_name == 'schedule' }}
+    needs: [build]
+    uses: uniport/workflows/.github/workflows/update-archetype.yml@main
+    with:
+      version: ${{ needs.build.outputs.VERSION }}
+      component_name: uniport-gateway
+    secrets:
+      UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
 
-      - uses: gacts/github-slug@v1
-        id: slug
+  tag:
+    name: Nexus Tagging
+    needs: [build]
+    uses: uniport/workflows/.github/workflows/tag-nexus-artifacts.yml@main
+    with:
+      version: ${{ needs.build.outputs.VERSION }}
+      group_id: ${{ needs.build.outputs.GROUP_ID }}
+      tag_docker: true
+      tag_maven: true
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
-      - name: Setup Docs Variable
-        id: docs-vars
-        shell: bash
-        run: |
-          cat >> $GITHUB_OUTPUT <<EOF
-          ARTIFACT_NAME=uniport-gateway-docs-${{ github.sha }}
-          ARTIFACT_PATH=build.zip
-          RUN_ID=${{ github.run_id }}
-          EOF
-
-      - name: Setup Java
-        uses: uniport/workflows/.github/actions/setup-java@main
-        with:
-          architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
-          cache-maven: ${{ !contains(runner.name, 'macduff') }}
-
-      - name: Unlock keychain
-        if: ${{ contains(runner.name, 'macduff') }}
-        run: |
-          security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
-
-      - name: Setup Helm
-        uses: uniport/workflows/.github/actions/add-helm-repositories@main
-        with:
-          username: ${{ env.CI_AUTH_USR }}
-          password: ${{ env.CI_AUTH_PSW }}
-
-      - name: Login to Nexus Docker Registry
-        uses: docker/login-action@v3
-        with:
-          registry: uniportcr.artifacts.inventage.com
-          username: ${{ env.CI_AUTH_USR }}
-          password: ${{ env.CI_AUTH_PSW }}
-          logout: ${{ !contains(runner.name, 'macduff') }}
-
-      - name: Setup NPM Access
-        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@main
-        with:
-          token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
-          repository: inventage-portal-npm-group
-          auth-file: docs/src/main/mkdocs/.npmrc
-
-      - name: Set version
-        uses: uniport/workflows/.github/actions/set-maven-project-version@main
-        with:
-          version: ${{ steps.vars.outputs.RC_VERSION }}
-          settings-file: .github/settings.xml
-
-      - name: Maven build
-        run: |
-          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true -Djava.io.tmpdir=. deploy
-
-      - name: Checkstyle
-        run: |
-          mvn -B --settings .github/settings.xml initialize checkstyle:check
-
-      - name: Spotbugs
-        run: |
-          mvn -B --settings .github/settings.xml initialize spotbugs:check
-
-      - name: Check uncommitted code
-        uses: uniport/workflows/.github/actions/ensure-no-uncommitted-code@main
-
-      - name: Zip dist directory for artifacts
-        working-directory: docs/src/main/mkdocs
-        run: |
-          zip -r ${{ github.workspace }}/${{ steps.docs-vars.outputs.ARTIFACT_PATH }} ./build
-
-      - name: Upload artifact for other jobs
-        id: upload
-        uses: actions/upload-artifact@v5
-        with:
-          name: ${{ steps.docs-vars.outputs.ARTIFACT_NAME }}
-          path: ${{ steps.docs-vars.outputs.ARTIFACT_PATH }}
-          compression-level: 0
-          retention-days: 7
-
-      - name: Summary
-        run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF  
-          ## Maven Build
-          This workflow ran successfully on **$(date)**.
-          ### Outputs
-          - **VERSION**: \`${{ steps.vars.outputs.RC_VERSION }}\`
-          - **GROUP_ID**: \`${{ steps.vars.outputs.GROUP_ID }}\`
-          - **docs_artifact_name**: \`${{ steps.docs-vars.outputs.ARTIFACT_NAME }}\`
-          - **docs_artifact_path**: \`${{ steps.docs-vars.outputs.ARTIFACT_PATH }}\`
-          - **branch_name_slug**: \`${{ steps.slug.outputs.branch-name-slug }}\`
-          EOF
+  docs:
+    name: Deploy Docs (main)
+    needs: [build]
+    uses: ./.github/workflows/deploy-docs.yml
+    # Do not deploy on forks
+    if: ${{ !github.repository.fork }}
+    permissions:
+      actions: read
+      statuses: write
+      pull-requests: write
+      deployments: write
+    secrets:
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    with:
+      alias: ${{ needs.build.outputs.branch_name_slug }}
+      artifact_name: ${{ needs.build.outputs.docs_artifact_name }}
+      artifact_path: ${{ needs.build.outputs.docs_artifact_path }}
+      run_id: ${{ needs.build.outputs.run_id }}
+      environment: docs

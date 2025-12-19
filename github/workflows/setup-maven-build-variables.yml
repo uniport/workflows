@@ -1,0 +1,51 @@
+# Wrapper around the setup-maven-build-variables that maps all outputs to the workflow
+# so it can also be used as a reusable workflow as opposed to just a composite action.
+name: Setup Maven Build Variables
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    outputs:
+      REACTOR_VERSION:
+        description: The full version from pom.xml (e.g., 1.0.0-SNAPSHOT)
+        value: ${{ jobs.setup.outputs.REACTOR_VERSION }}
+      SEMVER:
+        description: The version without -SNAPSHOT (e.g., 1.0.0)
+        value: ${{ jobs.setup.outputs.SEMVER }}
+      VERSION_SUFFIX:
+        description: A suffix combining build date, run number, and short SHA (e.g., 20250422123045-123-abcdefg)
+        value: ${{ jobs.setup.outputs.VERSION_SUFFIX }}
+      RC_VERSION:
+        description: The release candidate version (e.g., 1.0.0-20250422123045-123-abcdefg)
+        value: ${{ jobs.setup.outputs.RC_VERSION }}
+      SHORT_SHA:
+        description: The short Git SHA (first 7 characters)
+        value: ${{ jobs.setup.outputs.SHORT_SHA }}
+      FULL_SHA:
+        description: The full Git SHA
+        value: ${{ jobs.setup.outputs.FULL_SHA }}
+      GROUP_ID:
+        description: The groupId from pom.xml
+        value: ${{ jobs.setup.outputs.GROUP_ID }}
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      REACTOR_VERSION: ${{ steps.vars.outputs.REACTOR_VERSION }}
+      SEMVER: ${{ steps.vars.outputs.SEMVER }}
+      VERSION_SUFFIX: ${{ steps.vars.outputs.VERSION_SUFFIX }}
+      RC_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+      SHORT_SHA: ${{ steps.vars.outputs.SHORT_SHA }}
+      FULL_SHA: ${{ steps.vars.outputs.FULL_SHA }}
+      GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Variables
+        id: vars
+        uses: ./github/actions/setup-maven-build-variables

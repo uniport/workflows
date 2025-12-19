@@ -4,15 +4,20 @@ run-name: 'Maven build workflow #${{ github.run_number }} triggered by ${{ githu
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      has_frontend:
+        description: 'Boolean if the module has a frontend'
+        required: true
+        type: boolean
     secrets:
       NEXUS3_PW:
         required: true
-      NEXUS_NPM_TOKEN_WRITE:
-        required: false
       NEXUS_NPM_TOKEN_READ_ONLY:
         required: true
       MACDUFF_KEYCHAIN_PASSWORD:
         required: true
+      NEXUS_NPM_TOKEN_WRITE:
+        required: false
     outputs:
       VERSION:
         description: 'Build version'
@@ -20,6 +25,12 @@ on:
       GROUP_ID:
         description: 'The maven groupId attribute'
         value: ${{ jobs.maven.outputs.GROUP_ID }}
+      run_id:
+        description: "The run-id of the job that uploaded the build artifact"
+        value: ${{ github.run_id }}
+      branch_name_slug:
+        description: "The slug of the current branch"
+        value: ${{ jobs.maven.outputs.branch_name_slug }}
 
 env:
   DOCKER_CONFIG_DIRECTORY: "${{ github.workspace }}/.docker"
@@ -27,7 +38,6 @@ env:
 jobs:
   maven:
     name: Deploy
-    #    runs-on: ubuntu-latest
     runs-on: macduff
     timeout-minutes: 60
     env:
@@ -37,6 +47,7 @@ jobs:
     outputs:
       VERSION: ${{ steps.vars.outputs.RC_VERSION }}
       GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
+      branch_name_slug: ${{ steps.slug.outputs.branch-name-slug }}
 
     steps:
       - name: Checkout Repository
@@ -47,13 +58,16 @@ jobs:
 
       - name: Setup Variables
         id: vars
-        uses: uniport/workflows/.github/actions/setup-maven-build-variables@main
+        uses: ./github/actions/setup-maven-build-variables@main
+
+      - uses: gacts/github-slug@v1
+        id: slug
 
       - name: Disable man-db triggers
-        uses: uniport/workflows/.github/actions/disable-man-db-triggers@main
+        uses: ./github/actions/disable-man-db-triggers@main
 
       - name: Setup Java
-        uses: uniport/workflows/.github/actions/setup-java@main
+        uses: ./github/actions/setup-java@main
         with:
           architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
           cache-maven: ${{ !contains(runner.name, 'macduff') }}
@@ -65,7 +79,7 @@ jobs:
           security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
 
       - name: Setup Helm
-        uses: uniport/workflows/.github/actions/add-helm-repositories@main
+        uses: ./github/actions/add-helm-repositories@main
         with:
           username: ${{ env.CI_AUTH_USR }}
           password: ${{ env.CI_AUTH_PSW }}
@@ -79,7 +93,7 @@ jobs:
           logout: ${{ !contains(runner.name, 'macduff') }}
 
       - name: Setup NPM Access
-        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@main
+        uses: ./github/actions/setup-npm-nexus-access@main
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
           repository: inventage-portal-npm-group
@@ -87,14 +101,14 @@ jobs:
 
       - name: Setup NPM Access (staging)
         if: ${{ secrets.NEXUS_NPM_TOKEN_WRITE != '' }}
-        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@main
+        uses: ./github/actions/setup-npm-nexus-access@main
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_WRITE }}
           repository: inventage-portal-npm-staging
           auth-file: frontend/src/main/web/.npmrc
 
       - name: Set version
-        uses: uniport/workflows/.github/actions/set-maven-project-version@main
+        uses: ./github/actions/set-maven-project-version@main
         with:
           version: ${{ steps.vars.outputs.RC_VERSION }}
           settings-file: .github/settings.xml
@@ -120,7 +134,11 @@ jobs:
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
 
+      - name: Check uncommitted code
+        uses: ./github/actions/ensure-no-uncommitted-code@main
+
       - name: Frontend Test Coverage
+        if: ${{ inputs.has_frontend }}
         uses: livewing/lcov-job-summary@v1.2.0
         with:
           lcov: frontend/src/main/web/coverage/lcov.info
