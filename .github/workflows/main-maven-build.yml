@@ -58,16 +58,16 @@ jobs:
 
       - name: Setup Variables
         id: vars
-        uses: ./.github/actions/setup-maven-build-variables@main
+        uses: ./github/actions/setup-maven-build-variables
 
       - uses: gacts/github-slug@v1
         id: slug
 
       - name: Disable man-db triggers
-        uses: ./.github/actions/disable-man-db-triggers@main
+        uses: ./github/actions/disable-man-db-triggers
 
       - name: Setup Java
-        uses: ./.github/actions/setup-java@main
+        uses: ./github/actions/setup-java
         with:
           architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
           cache-maven: ${{ !contains(runner.name, 'macduff') }}
@@ -79,7 +79,7 @@ jobs:
           security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
 
       - name: Setup Helm
-        uses: ./.github/actions/add-helm-repositories@main
+        uses: ./github/actions/add-helm-repositories
         with:
           username: ${{ env.CI_AUTH_USR }}
           password: ${{ env.CI_AUTH_PSW }}
@@ -93,22 +93,21 @@ jobs:
           logout: ${{ !contains(runner.name, 'macduff') }}
 
       - name: Setup NPM Access
-        uses: ./.github/actions/setup-npm-nexus-access@main
+        uses: ./github/actions/setup-npm-nexus-access
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
           repository: inventage-portal-npm-group
           auth-file: frontend/src/main/web/.npmrc
 
       - name: Setup NPM Access (staging)
-        if: ${{ secrets.NEXUS_NPM_TOKEN_WRITE != '' }}
-        uses: ./.github/actions/setup-npm-nexus-access@main
+        uses: ./github/actions/setup-npm-nexus-access
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_WRITE }}
           repository: inventage-portal-npm-staging
           auth-file: frontend/src/main/web/.npmrc
 
       - name: Set version
-        uses: ./.github/actions/set-maven-project-version@main
+        uses: ./github/actions/set-maven-project-version
         with:
           version: ${{ steps.vars.outputs.RC_VERSION }}
           settings-file: .github/settings.xml
@@ -135,7 +134,7 @@ jobs:
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
 
       - name: Check uncommitted code
-        uses: ./.github/actions/ensure-no-uncommitted-code@main
+        uses: ./github/actions/ensure-no-uncommitted-code
 
       - name: Frontend Test Coverage
         if: ${{ inputs.has_frontend }}

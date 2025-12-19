@@ -21,6 +21,10 @@ runs:
     - name: Add Nexus NPM credentials
       shell: bash
       run: |
+        if [ -z "${NPM_TOKEN}" ]; then
+          echo "NPM token not set — skipping Nexus NPM setup."
+          exit 0
+        fi
         cat << EOF >> '${{ inputs.auth-file }}'
         //$NEXUS_URL/repository/$NPM_REPOSITORY/:_authToken=$NPM_TOKEN
         EOF
