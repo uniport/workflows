@@ -76,7 +76,7 @@ concurrency:
 jobs:
   maven:
     name: Maven Build
-    uses: ./.github/workflows/main-maven-build.yml
+    uses: ./.github/workflows/base-maven-build.yml
     with:
       has_frontend: ${{ inputs.has_frontend }}
     secrets:
@@ -89,7 +89,7 @@ jobs:
     name: Deploy to Development
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.deploy_to_dev }}
     needs: [maven]
-    uses: ./.github/workflows/deploy-dev.yml
+    uses: ./.github/workflows/base-deploy-dev.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       component_name: ${{ inputs.component_name }}
@@ -101,7 +101,7 @@ jobs:
     name: Update Archetype
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.update_archetype }}
     needs: [maven]
-    uses: ./.github/workflows/update-archetype.yml
+    uses: ./.github/workflows/base-update-archetype.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       component_name: ${{ inputs.component_name }}
@@ -112,7 +112,7 @@ jobs:
     name: Tag Nexus Artifacts
     if: ${{ inputs.tag_docker || inputs.tag_maven || inputs.tag_npm || inputs.tag_helm}}
     needs: [maven]
-    uses: ./.github/workflows/tag-nexus-artifacts.yml
+    uses: ./.github/workflows/base-tag-nexus-artifacts.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       group_id: ${{ needs.maven.outputs.GROUP_ID }}
