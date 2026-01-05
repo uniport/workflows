@@ -13,6 +13,9 @@ on:
         description: 'Boolean if the module has a frontend'
         required: true
         type: boolean
+      java_version:
+        required: true
+        type: string
 
       # === Deployment Options ===
       deploy_to_dev:
@@ -79,6 +82,7 @@ jobs:
     uses: ./.github/workflows/base-maven-build.yml
     with:
       has_frontend: ${{ inputs.has_frontend }}
+      java_version: ${{ inputs.java_version }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
       NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}

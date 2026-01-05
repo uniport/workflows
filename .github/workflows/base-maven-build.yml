@@ -9,6 +9,9 @@ on:
         description: 'Boolean if the module has a frontend'
         required: true
         type: boolean
+      java_version:
+        required: true
+        type: string
     secrets:
       NEXUS3_PW:
         required: true
@@ -71,7 +74,7 @@ jobs:
         with:
           architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
           cache-maven: ${{ !contains(runner.name, 'macduff') }}
-          java-version: 17
+          java-version: ${{ inputs.java_version }}
 
       - name: Unlock keychain
         if: ${{ contains(runner.name, 'macduff') }}
