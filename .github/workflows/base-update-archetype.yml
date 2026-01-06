@@ -41,6 +41,7 @@ on:
 
 jobs:
   register:
+    name: Update Archetype
     runs-on: ubuntu-latest
     steps:
       - name: Validate version format

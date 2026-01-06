@@ -40,7 +40,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy
+    name: Deploy (Dev)
     runs-on: ubuntu-latest
     environment:
       name: development
@@ -62,13 +62,17 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: |
             uniport-deployment
+            
+      # Add this to wait for token propagation
+      - name: Wait for Token Propagation
+        run: sleep 10
 
       - name: Checkout deployment repo
         uses: actions/checkout@v4
         with:
           repository: uniport/uniport-deployment
           token: ${{ steps.app-token.outputs.token }}
-          ref: main
+          ref: ${{ inputs.branch }}
           path: deployment-repo
 
       - name: Configure Git user
@@ -83,7 +87,7 @@ jobs:
           ./updateVersion.sh "${{ inputs.component_name }}" "${{ inputs.version }}"
           git push origin ${{ inputs.branch }}
 
-      - name: Summary
+      - name: Build summary
         run: |
           echo "## Deploy DEV Details" >> $GITHUB_STEP_SUMMARY
           echo "- **version**: \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY

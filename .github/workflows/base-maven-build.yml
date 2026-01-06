@@ -1,15 +1,16 @@
-name: maven.yml
-run-name: 'Maven build workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
+name: 'Maven Build & Publish'
+run-name: 'Maven build #${{ github.run_number }} · ${{ github.ref_name }} · triggered by ${{ github.actor }}'
 
 on:
   workflow_dispatch:
   workflow_call:
     inputs:
       has_frontend:
-        description: 'Boolean if the module has a frontend'
+        description: 'Whether the module has a frontend'
         required: true
         type: boolean
       java_version:
+        description: 'Java version used for the build'
         required: true
         type: string
     secrets:
@@ -23,16 +24,16 @@ on:
         required: false
     outputs:
       VERSION:
-        description: 'Build version'
+        description: 'Built artifact version'
         value: ${{ jobs.maven.outputs.VERSION }}
       GROUP_ID:
         description: 'The maven groupId attribute'
         value: ${{ jobs.maven.outputs.GROUP_ID }}
       run_id:
-        description: "The run-id of the job that uploaded the build artifact"
+        description: 'Workflow run ID of this build'
         value: ${{ github.run_id }}
       branch_name_slug:
-        description: "The slug of the current branch"
+        description: 'Slugified current branch name'
         value: ${{ jobs.maven.outputs.branch_name_slug }}
 
 env:
@@ -40,7 +41,7 @@ env:
 
 jobs:
   maven:
-    name: Deploy
+    name: Maven Build & Publish Artifacts
     runs-on: macduff
     timeout-minutes: 60
     env:
@@ -59,11 +60,12 @@ jobs:
           # Need to fetch everything, otherwise "spotless-maven-plugin" fails because we reference origin/master branch in the configuration
           fetch-depth: 0
 
-      - name: Setup Variables
+      - name: Setup build variables
         id: vars
         uses: uniport/workflows/.github/actions/setup-maven-build-variables@ci-migration
 
-      - uses: gacts/github-slug@v1
+      - name: Derive branch slug
+        uses: gacts/github-slug@v1
         id: slug
 
       - name: Disable man-db triggers
@@ -76,18 +78,18 @@ jobs:
           cache-maven: ${{ !contains(runner.name, 'macduff') }}
           java-version: ${{ inputs.java_version }}
 
-      - name: Unlock keychain
+      - name: Unlock keychain (macOS runners)
         if: ${{ contains(runner.name, 'macduff') }}
         run: |
           security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
 
-      - name: Setup Helm
+      - name: Setup Helm repositories
         uses: uniport/workflows/.github/actions/add-helm-repositories@ci-migration
         with:
           username: ${{ env.CI_AUTH_USR }}
           password: ${{ env.CI_AUTH_PSW }}
 
-      - name: Login to Nexus Docker Registry
+      - name: Login to Docker registry
         uses: docker/login-action@v3
         with:
           registry: uniportcr.artifacts.inventage.com
@@ -95,7 +97,7 @@ jobs:
           password: ${{ env.CI_AUTH_PSW }}
           logout: ${{ !contains(runner.name, 'macduff') }}
 
-      - name: Setup NPM Access
+      - name: Setup NPM Access (read-only)
         if: ${{ inputs.has_frontend }}
         uses: uniport/workflows/.github/actions/setup-npm-nexus-access@ci-migration
         with:
@@ -111,43 +113,43 @@ jobs:
           repository: inventage-portal-npm-staging
           auth-file: frontend/src/main/web/.npmrc
 
-      - name: Set version
+      - name: Set Maven project version
         uses: uniport/workflows/.github/actions/set-maven-project-version@ci-migration
         with:
           version: ${{ steps.vars.outputs.RC_VERSION }}
           settings-file: .github/settings.xml
           script: true
 
-      - name: Copy .docker directory
+      - name: Copy Docker configuration
         run: |
           cp -Rpf ~/.docker ${{ env.DOCKER_CONFIG_DIRECTORY }}
 
-      - name: Maven build
+      - name: Build & deploy with Maven
         run: |
           mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 
       # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
-      - name: Checkstyle
+      - name: Run Checkstyle
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
 
       # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
-      - name: Spotbugs
+      - name: Run Spotbugs
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
 
-      - name: Check uncommitted code
+      - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/ensure-no-uncommitted-code@ci-migration
 
-      - name: Frontend Test Coverage
+      - name: Frontend test coverage
         if: ${{ inputs.has_frontend }}
         uses: livewing/lcov-job-summary@v1.2.0
         with:
           lcov: frontend/src/main/web/coverage/lcov.info
 
-      - name: Summary
+      - name: Build summary
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Maven Build

@@ -12,6 +12,10 @@ on:
         description: 'The tag name to create'
         type: string
         required: true
+      kind:
+        description: 'Component kind for display (e.g. docker, helm, npm)'
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       name:
@@ -25,7 +29,7 @@ env:
 
 jobs:
   tag:
-    name: create
+    name: Tag (${{ inputs.kind }})
     runs-on: ubuntu-latest
     steps:
       # https://help.sonatype.com/en/tagging.html

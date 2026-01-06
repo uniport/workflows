@@ -20,6 +20,10 @@ on:
         description: 'The name of the tag to associate the components with'
         type: string
         required: true
+      kind:
+        description: 'Component kind for display (e.g. docker, helm, npm)'
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
       repo_id:
@@ -45,7 +49,7 @@ env:
 # See: https://help.sonatype.com/en/searching-for-components.html#keyword-search-query-string
 jobs:
   associate:
-    name: associate
+    name: Associate (${{ inputs.kind }})
     runs-on: ubuntu-latest
     steps:
       # https://help.sonatype.com/en/tagging.html
