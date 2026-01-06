@@ -80,7 +80,7 @@ concurrency:
 
 jobs:
   maven:
-    name: Build
+    name: Maven
     uses: ./.github/workflows/base-maven-build.yml
     with:
       has_frontend: ${{ inputs.has_frontend }}

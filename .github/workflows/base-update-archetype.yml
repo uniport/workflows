@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate version format
-        uses: uniport/workflows/.github/actions/validate-version@main
+        uses: uniport/workflows/.github/actions/base/validate-version@ci-migration
         with:
           version: ${{ inputs.version }}
 

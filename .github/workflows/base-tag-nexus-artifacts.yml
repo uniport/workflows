@@ -102,7 +102,7 @@ jobs:
     steps:
       - name: Parse version string
         id: parse
-        uses: uniport/workflows/.github/actions/parse-version@main
+        uses: uniport/workflows/.github/actions/base/parse-version@ci-migration
         with:
           version: ${{ inputs.version }}
 

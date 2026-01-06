@@ -41,7 +41,7 @@ env:
 
 jobs:
   maven:
-    name: Maven Build & Publish Artifacts
+    name: Build & Publish
     runs-on: macduff
     timeout-minutes: 60
     env:
@@ -62,17 +62,17 @@ jobs:
 
       - name: Setup build variables
         id: vars
-        uses: uniport/workflows/.github/actions/setup-maven-build-variables@ci-migration
+        uses: uniport/workflows/.github/actions/base/setup-maven-build-variables@ci-migration
 
       - name: Derive branch slug
         uses: gacts/github-slug@v1
         id: slug
 
       - name: Disable man-db triggers
-        uses: uniport/workflows/.github/actions/disable-man-db-triggers@ci-migration
+        uses: uniport/workflows/.github/actions/base/disable-man-db-triggers@ci-migration
 
       - name: Setup Java
-        uses: uniport/workflows/.github/actions/setup-java@ci-migration
+        uses: uniport/workflows/.github/actions/base/setup-java@ci-migration
         with:
           architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
           cache-maven: ${{ !contains(runner.name, 'macduff') }}
@@ -84,7 +84,7 @@ jobs:
           security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
 
       - name: Setup Helm repositories
-        uses: uniport/workflows/.github/actions/add-helm-repositories@ci-migration
+        uses: uniport/workflows/.github/actions/base/add-helm-repositories@ci-migration
         with:
           username: ${{ env.CI_AUTH_USR }}
           password: ${{ env.CI_AUTH_PSW }}
@@ -99,7 +99,7 @@ jobs:
 
       - name: Setup NPM Access (read-only)
         if: ${{ inputs.has_frontend }}
-        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@ci-migration
+        uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@ci-migration
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
           repository: inventage-portal-npm-group
@@ -107,14 +107,14 @@ jobs:
 
       - name: Setup NPM Access (staging)
         if: ${{ inputs.has_frontend }}
-        uses: uniport/workflows/.github/actions/setup-npm-nexus-access@ci-migration
+        uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@ci-migration
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_WRITE }}
           repository: inventage-portal-npm-staging
           auth-file: frontend/src/main/web/.npmrc
 
       - name: Set Maven project version
-        uses: uniport/workflows/.github/actions/set-maven-project-version@ci-migration
+        uses: uniport/workflows/.github/actions/base/set-maven-project-version@ci-migration
         with:
           version: ${{ steps.vars.outputs.RC_VERSION }}
           settings-file: .github/settings.xml
@@ -141,7 +141,7 @@ jobs:
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
 
       - name: Ensure no uncommitted code
-        uses: uniport/workflows/.github/actions/ensure-no-uncommitted-code@ci-migration
+        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@ci-migration
 
       - name: Frontend test coverage
         if: ${{ inputs.has_frontend }}
