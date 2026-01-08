@@ -130,10 +130,16 @@ jobs:
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 
+      - name: Ensure no uncommitted code
+        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@ci-migration
+
       # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
       - name: Run Checkstyle
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
+
+      - name: Ensure no uncommitted code
+        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@ci-migration
 
       # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
       - name: Run Spotbugs
