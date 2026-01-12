@@ -10,10 +10,6 @@ on:
         description: 'Component name for deployment and archetype'
         required: true
         type: string
-      has_frontend:
-        description: 'Whether the component includes a frontend'
-        required: true
-        type: boolean
       java_version:
         description: 'Java version used for the build'
         required: true
@@ -30,6 +26,22 @@ on:
         required: false
         type: string
         default: 'main'
+
+      has_frontend:
+        description: 'Whether the component includes a frontend'
+        required: false
+        type: boolean
+        default: false
+      needs_npm_access:
+        description: 'If the builds needs to read/write to the npm repo'
+        required: false
+        type: boolean
+        default: false
+      npmrc_path:
+        description: 'Path to the .npmrc file for NPM authentication'
+        required: false
+        type: string
+        default: 'frontend/src/main/web/.npmrc'
 
       # === Archetype Options ===
       update_archetype:
@@ -83,8 +95,10 @@ jobs:
     name: Maven
     uses: ./.github/workflows/base-maven-build.yml
     with:
-      has_frontend: ${{ inputs.has_frontend }}
       java_version: ${{ inputs.java_version }}
+      has_frontend: ${{ inputs.has_frontend }}
+      needs_npm_access: ${{ inputs.needs_npm_access }}
+      npmrc_path: ${{ inputs.npmrc_path }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
       NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}

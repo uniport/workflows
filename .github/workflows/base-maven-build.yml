@@ -9,6 +9,14 @@ on:
         description: 'Whether the module has a frontend'
         required: true
         type: boolean
+      needs_npm_access:
+        description: 'Whether the module needs npm access'
+        required: true
+        type: boolean
+      npmrc_path:
+        description: 'Path to the .npmrc file for NPM authentication'
+        required: true
+        type: string
       java_version:
         description: 'Java version used for the build'
         required: true
@@ -98,20 +106,20 @@ jobs:
           logout: ${{ !contains(runner.name, 'macduff') }}
 
       - name: Setup NPM Access (read-only)
-        if: ${{ inputs.has_frontend }}
+        if: ${{ inputs.needs_npm_access }}
         uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@ci-migration
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
           repository: inventage-portal-npm-group
-          auth-file: frontend/src/main/web/.npmrc
+          auth-file: ${{ inputs.npmrc_path }}
 
       - name: Setup NPM Access (staging)
-        if: ${{ inputs.has_frontend }}
+        if: ${{ inputs.needs_npm_access }}
         uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@ci-migration
         with:
           token: ${{ secrets.NEXUS_NPM_TOKEN_WRITE }}
           repository: inventage-portal-npm-staging
-          auth-file: frontend/src/main/web/.npmrc
+          auth-file: ${{ inputs.npmrc_path }}
 
       - name: Set Maven project version
         uses: uniport/workflows/.github/actions/base/set-maven-project-version@ci-migration
