@@ -21,17 +21,15 @@ on:
         required: false
         type: boolean
         default: true
-      deploy_branch:
-        description: 'Branch to use in deployment repository'
-        required: false
-        type: string
-        default: 'main'
 
+      # === Frontend ===
       has_frontend:
         description: 'Whether the component includes a frontend'
         required: false
         type: boolean
         default: false
+
+      # === NPM Options ===
       needs_npm_access:
         description: 'If the builds needs to read/write to the npm repo'
         required: false
