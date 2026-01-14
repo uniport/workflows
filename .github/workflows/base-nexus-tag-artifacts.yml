@@ -1,5 +1,5 @@
 # Workflow for staging (tagging + associating) artifacts of various types (Docker, Helm, Maven, NPM) in Nexus
-name: Tag Artifacts
+name: Tag Nexus Artifacts
 
 on:
   workflow_call:
@@ -85,7 +85,8 @@ env:
   STAGING_REPO_NPM: ${{ vars.STAGING_REPO_NPM }}
 
 jobs:
-  tag:
+  # Generate tag names and version patterns
+  setup-tag-config:
     name: Setup Tag Name
     runs-on: ubuntu-latest
     outputs:
@@ -102,7 +103,7 @@ jobs:
     steps:
       - name: Parse version string
         id: parse
-        uses: uniport/workflows/.github/actions/parse-version@main
+        uses: uniport/workflows/.github/actions/base/parse-version@ci-migration
         with:
           version: ${{ inputs.version }}
 
@@ -113,6 +114,8 @@ jobs:
           if [ -z "$TAG_NAME" ]; then
             TAG_NAME="${{ inputs.group_id }}_${{ inputs.version }}"
           fi
+          
+          echo "Base tag name: $TAG_NAME"
 
           TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}" # Calculate all tag names
           TAG_NAME_DOCKER="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_DOCKER }}"
@@ -121,7 +124,10 @@ jobs:
 
           VERSION_SUFFIX="${{ steps.parse.outputs.build_date }}-${{ steps.parse.outputs.run_id }}-${{ steps.parse.outputs.commit_sha }}"
           ALL_ARTIFACTS_VERSION="*-${VERSION_SUFFIX}"
-
+          
+          echo "Maven version pattern: $ALL_ARTIFACTS_VERSION"
+          
+          # Export outputs
           cat >> $GITHUB_OUTPUT <<EOF
           TAG_NAME=$TAG_NAME
           TAG_NAME_MAVEN=$TAG_NAME_MAVEN
@@ -153,90 +159,100 @@ jobs:
           - **ALL_ARTIFACTS_VERSION**: \`${{ steps.tag.outputs.ALL_ARTIFACTS_VERSION }}\`
           EOF
 
+  # Create tags for enabled artifact types
   tag_mvn:
-    name: Create Tag (maven)
-    uses: ./.github/workflows/nexus-tag-create.yml
-    needs: [tag]
+    name: Tag
+    uses: ./.github/workflows/base-nexus-tag-create.yml
+    needs: [setup-tag-config]
     if: ${{ inputs.tag_maven }}
     with:
       name: ${{ needs.tag.outputs.TAG_NAME_MAVEN }}
+      kind: maven
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
   tag_docker:
-    name: Create Tag (docker)
-    uses: ./.github/workflows/nexus-tag-create.yml
-    needs: [tag]
+    name: Tag
+    uses: ./.github/workflows/base-nexus-tag-create.yml
+    needs: [setup-tag-config]
     if: ${{ inputs.tag_docker }}
     with:
       name: ${{ needs.tag.outputs.TAG_NAME_DOCKER }}
+      kind: docker
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
   tag_helm:
-    name: Create Tag (helm)
-    uses: ./.github/workflows/nexus-tag-create.yml
-    needs: [tag]
+    name: Tag
+    uses: ./.github/workflows/base-nexus-tag-create.yml
+    needs: [setup-tag-config]
     if: ${{ inputs.tag_helm }}
     with:
       name: ${{ needs.tag.outputs.TAG_NAME_HELM }}
+      kind: helm
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
   tag_npm:
-    name: Create Tag (npm)
-    uses: ./.github/workflows/nexus-tag-create.yml
-    needs: [tag]
+    name: Tag
+    uses: ./.github/workflows/base-nexus-tag-create.yml
+    needs: [setup-tag-config]
     if: ${{ inputs.tag_npm }}
     with:
       name: ${{ needs.tag.outputs.TAG_NAME_NPM }}
+      kind: npm
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
+  # Associate artifacts with tags
   associate_mvn:
-    name: Associate Components (maven)
-    uses: ./.github/workflows/nexus-tag-associate.yml
-    needs: [tag, tag_mvn]
+    name: Associate
+    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    needs: [setup-tag-config, tag_mvn]
     if: ${{ inputs.tag_maven }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_MAVEN }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_MAVEN }}
       version: ${{ needs.tag.outputs.ALL_ARTIFACTS_VERSION }}
+      kind: maven
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
   associate_docker:
-    name: Associate Components (docker)
-    uses: ./.github/workflows/nexus-tag-associate.yml
-    needs: [tag, tag_docker]
+    name: Associate
+    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    needs: [setup-tag-config, tag_docker]
     if: ${{ inputs.tag_docker }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_DOCKER }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_DOCKER }}
       version: '"${{ inputs.version }}"'
+      kind: docker
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
   associate_helm:
-    name: Associate Components (helm)
-    uses: ./.github/workflows/nexus-tag-associate.yml
-    needs: [tag, tag_helm]
+    name: Associate
+    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    needs: [setup-tag-config, tag_helm]
     if: ${{ inputs.tag_helm }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_HELM }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_HELM }}
       version: '"${{ inputs.version }}"'
+      kind: helm
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
 
   associate_npm:
-    name: Associate Components (npm)
-    uses: ./.github/workflows/nexus-tag-associate.yml
-    needs: [tag, tag_npm]
+    name: Associate
+    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    needs: [setup-tag-config, tag_npm]
     if: ${{ inputs.tag_npm }}
     with:
       repo_id: ${{ needs.tag.outputs.STAGING_REPO_NPM }}
       tag_name: ${{ needs.tag.outputs.TAG_NAME_NPM }}
       version: '"${{ inputs.version }}"'
+      kind: npm
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}

@@ -1,5 +1,5 @@
 # Workflow for associating components that belong to a Nexus tag
-name: Nexus Tag Associate
+name: Associate Nexus Tag
 run-name: 'Nexus associate tag workflow #${{ github.run_number }} triggered by ${{ github.actor }}'
 
 on:
@@ -18,6 +18,10 @@ on:
         required: true
       tag_name:
         description: 'The name of the tag to associate the components with'
+        type: string
+        required: true
+      kind:
+        description: 'Component kind for display (e.g. docker, helm, npm)'
         type: string
         required: true
   workflow_dispatch:
@@ -45,12 +49,23 @@ env:
 # See: https://help.sonatype.com/en/searching-for-components.html#keyword-search-query-string
 jobs:
   associate:
-    name: associate
+    name: Associate (${{ inputs.kind }})
     runs-on: ubuntu-latest
     steps:
       # https://help.sonatype.com/en/tagging.html
       - name: Associate Components with Nexus Tag
         run: |
-          curl -fSs -X POST \
-          -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
-          '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository="${{ inputs.repo_id }}"&version=${{ inputs.version }}'
+          echo "Associating components with tag: ${{ inputs.tag_name }}"
+
+          HTTP_CODE=$(curl -fSs -w "%{http_code}" -o /tmp/response.json -X POST \
+            -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
+            '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository="${{ inputs.repo_id }}"&version=${{ inputs.version }}')
+
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✓ Successfully associated components with tag"
+            cat /tmp/response.json 2>/dev/null || true
+          else
+            echo "✗ Failed to associate components (HTTP $HTTP_CODE)"
+            cat /tmp/response.json 2>/dev/null || true
+            exit 1
+          fi
