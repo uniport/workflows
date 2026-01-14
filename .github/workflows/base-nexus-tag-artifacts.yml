@@ -86,7 +86,7 @@ env:
 
 jobs:
   # Generate tag names and version patterns
-  setup-tag-config:
+  tag:
     name: Setup Tag Name
     runs-on: ubuntu-latest
     outputs:
@@ -108,7 +108,7 @@ jobs:
           version: ${{ inputs.version }}
 
       - name: Set Tag Name
-        id: tag
+        id: setup-tag-config
         run: |
           TAG_NAME=${{ inputs.tag_name }}
           if [ -z "$TAG_NAME" ]; then
