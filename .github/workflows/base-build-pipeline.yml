@@ -130,7 +130,7 @@ jobs:
     name: Tag Artifacts
     if: ${{ inputs.tag_docker || inputs.tag_maven || inputs.tag_npm || inputs.tag_helm}}
     needs: [maven]
-    uses: ./.github/workflows/base-tag-nexus-artifacts.yml
+    uses: ./.github/workflows/base-nexus-tag-artifacts.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       group_id: ${{ needs.maven.outputs.GROUP_ID }}

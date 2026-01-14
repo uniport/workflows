@@ -1,5 +1,5 @@
 # Workflow for creating a Nexus tag
-name: Nexus Tag Create
+name: Create Nexus Tag
 run-name: 'Nexus create tag workflow #${{ github.run_number }} triggered by ${{ github.actor }}'
 
 on:
@@ -32,11 +32,34 @@ jobs:
     name: Tag (${{ inputs.kind }})
     runs-on: ubuntu-latest
     steps:
+      - name: Validate Tag Name
+        run: |
+          if [ -z "${{ inputs.name }}" ]; then
+            echo "Error: Tag name is required"
+            exit 1
+          fi
+          
+          # Check for invalid characters in tag name
+           if echo "${{ inputs.name }}" | grep -qE '[^a-zA-Z0-9._-]'; then
+             echo "Warning: Tag name contains special characters that may cause issues"
+           fi
+
       # https://help.sonatype.com/en/tagging.html
       - name: Create Nexus Tag
         run: |
-          curl -fSs -X POST \
+          echo "Creating tag: ${{ inputs.name }}"
+          
+          HTTP_CODE=$(curl -fSs -w "%{http_code}" -o /tmp/response.json -X POST \
             --url '${{ env.NEXUS3_URL }}/service/rest/v1/tags' \
             -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
             --header 'content-type: application/json' \
-            --data '{"name":"${{ inputs.name }}"}'
+            --data '{"name":"${{ inputs.name }}"}')
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✓ Successfully created tag"
+            cat /tmp/response.json 2>/dev/null || true
+          else
+            echo "✗ Failed to create tag (HTTP $HTTP_CODE)"
+            cat /tmp/response.json 2>/dev/null || true
+            exit 1
+          fi
