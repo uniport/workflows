@@ -14,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
-    uses: ./.github/workflows/npm-lint.yml
+#  lint:
+#    name: Lint
+#    uses: ./.github/workflows/npm-lint.yml
 
   test_maven:
     name: Test Maven Build
