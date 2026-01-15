@@ -1,0 +1,85 @@
+name: Setup Variables
+description: Sets up version-related variables from pom.xml and Git metadata
+author: Your Name or Organization
+
+outputs:
+  REACTOR_VERSION:
+    description: The full version from pom.xml (e.g., 1.0.0-SNAPSHOT)
+    value: ${{ steps.vars.outputs.REACTOR_VERSION }}
+  SEMVER:
+    description: The version without -SNAPSHOT (e.g., 1.0.0)
+    value: ${{ steps.vars.outputs.SEMVER }}
+  VERSION_SUFFIX:
+    description: A suffix combining build date, run number, and short SHA (e.g., 20250422123045-123-abcdefg)
+    value: ${{ steps.vars.outputs.VERSION_SUFFIX }}
+  RC_VERSION:
+    description: The release candidate version (e.g., 1.0.0-20250422123045-123-abcdefg)
+    value: ${{ steps.vars.outputs.RC_VERSION }}
+  SHORT_SHA:
+    description: The short Git SHA (first 7 characters)
+    value: ${{ steps.vars.outputs.SHORT_SHA }}
+  FULL_SHA:
+    description: The full Git SHA
+    value: ${{ steps.vars.outputs.FULL_SHA }}
+  GROUP_ID:
+    description: The groupId from pom.xml
+    value: ${{ steps.vars.outputs.GROUP_ID }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup variables
+      shell: bash
+      id: vars
+      run: |
+        # Read version from pom.xml
+        VERSION=$(awk '/<version>.*SNAPSHOT<\/version>/ {gsub(/.*<version>|<\/version>.*/, ""); print; exit}' pom.xml)
+
+        # Validate version
+        if [[ -z "$VERSION" ]]; then
+          echo "Error: Version is empty" >&2
+          exit 1
+        fi
+
+        # Version without -SNAPSHOT
+        SEMVER=$(echo "$VERSION" | sed 's/-SNAPSHOT$//')
+
+        # Get current date and time in YYYYMMDDHHMM format
+        BUILD_DATE=$(date +%Y%m%d%H%M)
+
+        # Full sha
+        FULL_SHA="${{ github.sha }}"
+
+        # Git sha short
+        SHORT_SHA=$(echo "$FULL_SHA" | cut -c 1-7)
+
+        # Construct VERSION_SUFFIX: date-buildNumber-shortSha
+        VERSION_SUFFIX="${BUILD_DATE}-${{ github.run_number }}-${SHORT_SHA}"
+
+        # Construct RC_VERSION
+        RC_VERSION="${SEMVER}-${VERSION_SUFFIX}"
+
+        # Read other attributes from pom.xml
+        GROUP_ID=$(awk '/<groupId>/ {gsub(/.*<groupId>|<\/groupId>.*/, ""); print; exit}' pom.xml)
+
+        # Save outputs
+        echo "REACTOR_VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "SEMVER=$SEMVER" >> $GITHUB_OUTPUT
+        echo "VERSION_SUFFIX=$VERSION_SUFFIX" >> $GITHUB_OUTPUT
+        echo "RC_VERSION=$RC_VERSION" >> $GITHUB_OUTPUT
+        echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
+        echo "FULL_SHA=$FULL_SHA" >> $GITHUB_OUTPUT
+        echo "GROUP_ID=$GROUP_ID" >> $GITHUB_OUTPUT
+
+    - name: Summary
+      shell: bash
+      run: |
+        echo "## Setup Maven Build Variables (Action)" >> $GITHUB_STEP_SUMMARY
+        echo "### Outputs" >> $GITHUB_STEP_SUMMARY
+        echo "- **REACTOR_VERSION**: \`${{ steps.vars.outputs.REACTOR_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **SEMVER**: \`${{ steps.vars.outputs.SEMVER }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **VERSION_SUFFIX**: \`${{ steps.vars.outputs.VERSION_SUFFIX }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **RC_VERSION**: \`${{ steps.vars.outputs.RC_VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **SHORT_SHA**: \`${{ steps.vars.outputs.SHORT_SHA }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **FULL_SHA**: \`${{ steps.vars.outputs.FULL_SHA }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **GROUP_ID**: \`${{ steps.vars.outputs.GROUP_ID }}\`" >> $GITHUB_STEP_SUMMARY

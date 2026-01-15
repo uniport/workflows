@@ -1,0 +1,174 @@
+name: 'Maven Build & Publish'
+run-name: 'Maven build #${{ github.run_number }} · ${{ github.ref_name }} · triggered by ${{ github.actor }}'
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      has_frontend:
+        description: 'Whether the module has a frontend'
+        required: true
+        type: boolean
+      needs_npm_access:
+        description: 'Whether the module needs npm access'
+        required: true
+        type: boolean
+      npmrc_path:
+        description: 'Path to the .npmrc file for NPM authentication'
+        required: true
+        type: string
+      java_version:
+        description: 'Java version used for the build'
+        required: true
+        type: string
+    secrets:
+      NEXUS3_PW:
+        required: true
+      NEXUS_NPM_TOKEN_READ_ONLY:
+        required: true
+      MACDUFF_KEYCHAIN_PASSWORD:
+        required: true
+      NEXUS_NPM_TOKEN_WRITE:
+        required: false
+    outputs:
+      VERSION:
+        description: 'Built artifact version'
+        value: ${{ jobs.maven.outputs.VERSION }}
+      GROUP_ID:
+        description: 'The maven groupId attribute'
+        value: ${{ jobs.maven.outputs.GROUP_ID }}
+      run_id:
+        description: 'Workflow run ID of this build'
+        value: ${{ github.run_id }}
+      branch_name_slug:
+        description: 'Slugified current branch name'
+        value: ${{ jobs.maven.outputs.branch_name_slug }}
+
+env:
+  DOCKER_CONFIG_DIRECTORY: "${{ github.workspace }}/.docker"
+
+jobs:
+  maven:
+    name: Build & Publish
+    runs-on: macduff
+    timeout-minutes: 60
+    env:
+      CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
+      CI_AUTH_PSW: ${{ secrets.NEXUS3_PW }}
+      HELM_REGISTRY_CONFIG: "~/.docker/config.json"
+    outputs:
+      VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+      GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
+      branch_name_slug: ${{ steps.slug.outputs.branch-name-slug }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+        with:
+          # Need to fetch everything, otherwise "spotless-maven-plugin" fails because we reference origin/master branch in the configuration
+          fetch-depth: 0
+
+      - name: Setup build variables
+        id: vars
+        uses: uniport/workflows/.github/actions/base/setup-maven-build-variables@ci-migration
+
+      - name: Derive branch slug
+        uses: gacts/github-slug@v1
+        id: slug
+
+      - name: Disable man-db triggers
+        uses: uniport/workflows/.github/actions/base/disable-man-db-triggers@ci-migration
+
+      - name: Setup Java
+        uses: uniport/workflows/.github/actions/base/setup-java@ci-migration
+        with:
+          architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
+          cache-maven: ${{ !contains(runner.name, 'macduff') }}
+          java-version: ${{ inputs.java_version }}
+
+      - name: Unlock keychain (macOS runners)
+        if: ${{ contains(runner.name, 'macduff') }}
+        run: |
+          security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
+
+      - name: Setup Helm repositories
+        uses: uniport/workflows/.github/actions/base/add-helm-repositories@ci-migration
+        with:
+          username: ${{ env.CI_AUTH_USR }}
+          password: ${{ env.CI_AUTH_PSW }}
+
+      - name: Login to Docker registry
+        uses: docker/login-action@v3
+        with:
+          registry: uniportcr.artifacts.inventage.com
+          username: ${{ env.CI_AUTH_USR }}
+          password: ${{ env.CI_AUTH_PSW }}
+          logout: ${{ !contains(runner.name, 'macduff') }}
+
+      - name: Setup NPM Access (read-only)
+        if: ${{ inputs.needs_npm_access }}
+        uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@ci-migration
+        with:
+          token: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
+          repository: inventage-portal-npm-group
+          auth-file: ${{ inputs.npmrc_path }}
+
+      - name: Setup NPM Access (staging)
+        if: ${{ inputs.needs_npm_access }}
+        uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@ci-migration
+        with:
+          token: ${{ secrets.NEXUS_NPM_TOKEN_WRITE }}
+          repository: inventage-portal-npm-staging
+          auth-file: ${{ inputs.npmrc_path }}
+
+      - name: Set Maven project version
+        uses: uniport/workflows/.github/actions/base/set-maven-project-version@ci-migration
+        with:
+          version: ${{ steps.vars.outputs.RC_VERSION }}
+          settings-file: .github/settings.xml
+          script: true
+
+      - name: Copy Docker configuration
+        run: |
+          cp -Rpf ~/.docker ${{ env.DOCKER_CONFIG_DIRECTORY }}
+
+      - name: Build & deploy with Maven
+        run: |
+          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
+        env:
+          PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+
+      - name: Ensure no uncommitted code
+        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@ci-migration
+
+      # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
+      - name: Run Checkstyle
+        run: |
+          mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
+
+      - name: Ensure no uncommitted code
+        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@ci-migration
+
+      # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
+      - name: Run Spotbugs
+        run: |
+          mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
+
+      - name: Ensure no uncommitted code
+        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@ci-migration
+
+      - name: Frontend test coverage
+        if: ${{ inputs.has_frontend }}
+        uses: livewing/lcov-job-summary@v1.2.0
+        with:
+          lcov: frontend/src/main/web/coverage/lcov.info
+
+      - name: Build summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## Maven Build
+          This workflow ran successfully on **$(date)**.
+          ### Outputs
+          - **VERSION**: \`${{ steps.vars.outputs.RC_VERSION }}\`
+          - **GROUP_ID**: \`${{ steps.vars.outputs.GROUP_ID }}\`
+          EOF

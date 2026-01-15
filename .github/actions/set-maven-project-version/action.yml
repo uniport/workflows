@@ -1,0 +1,50 @@
+name: 'Set Maven Project Version'
+description: 'Sets the project version in all maven modules'
+inputs:
+  version:
+    description: 'The version to update in the Maven module(s)'
+    required: true
+  script:
+    description: 'Whether to use the update version script instead of the maven build-helper plugin'
+    required: false
+  settings-file:
+    description: 'Maven related setting to point to the settings.xml file used. Default is ~/.m2/settings.xml.'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set version (script)
+      shell: bash
+      if: ${{ inputs.script == 'true' }}
+      run: |
+        SETTINGS_FILE=$(echo "${{ inputs.settings-file }}" | tr -d '[:space:]')
+
+        if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
+          echo "Error: Settings file '$SETTINGS_FILE' does not exist."
+          exit 1
+        fi
+
+        if [[ -n "$SETTINGS_FILE" ]]; then
+          MAVEN_SETTINGS_PATH="$SETTINGS_FILE" ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+        else
+          ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+        fi
+
+    - name: Set version (mvn plugin, custom settings)
+      shell: bash
+      if: ${{ inputs.script != 'true' }}
+      run: |
+        SETTINGS_FILE=$(echo "${{ inputs.settings-file }}" | tr -d '[:space:]')
+
+        if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
+          echo "Error: Settings file '$SETTINGS_FILE' does not exist."
+          exit 1
+        fi
+
+        if [[ -n "$SETTINGS_FILE" ]]; then
+          mvn -B -V --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
+        else
+          mvn -B -V --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+        fi

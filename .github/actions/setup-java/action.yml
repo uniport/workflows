@@ -1,0 +1,43 @@
+name: 'Setup Java'
+description: 'Sets up Java'
+inputs:
+  distribution:
+    description: 'Java distribution'
+    required: true
+    default: 'temurin'
+  architecture:
+    description: 'The target architecture of the package. Possible values: `x86`, `x64`, `armv7`, `aarch64`, `ppc64le`. Default value: Derived from the runner machine.'
+    required: true
+    default: ''
+  java-version:
+    description: 'Java version'
+    required: true
+    default: '21'
+  settings-path:
+    description: 'Maven related setting to point to the directory where the settings.xml file will be written. Default is ~/.m2.'
+    required: false
+    default: '~/.m2'
+  cache-maven:
+    description: 'Enable Maven dependency caching'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-java@v4
+      with:
+        distribution: ${{ inputs.distribution }}
+        architecture: ${{ inputs.architecture }}
+        java-version: ${{ inputs.java-version }}
+        settings-path: ${{ inputs.settings-path }}
+        overwrite-settings: false
+
+    - name: Cache Maven dependencies
+      if: ${{ inputs.cache-maven == 'true' }}
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-

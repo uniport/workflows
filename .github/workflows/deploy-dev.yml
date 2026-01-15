@@ -1,0 +1,94 @@
+# Workflow for deploying a component version to the DEV environment
+name: Deploy DEV
+run-name: 'DEV deployment #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
+
+on:
+  workflow_call:
+    secrets:
+      UNIPORT_APP_PRIVATE_KEY:
+        required: true
+    inputs:
+      version:
+        description: 'The version string'
+        required: true
+        type: string
+      component_name:
+        description: 'Portal component name to update its version in the deployment repository'
+        required: true
+        type: string
+      branch:
+        description: 'The branch to use in the deployment repository'
+        type: string
+        default: 'main'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version string'
+        required: true
+        type: string
+      component_name:
+        description: 'Portal component name to update its version in the deployment repository'
+        required: true
+        type: string
+      branch:
+        description: 'The branch to use in the deployment repository'
+        required: true
+        type: choice
+        options:
+          - main
+        default: 'main'
+
+jobs:
+  deploy:
+    name: Deploy (Dev)
+    runs-on: ubuntu-latest
+    environment:
+      name: development
+      url: https://ips.inventage.dev/
+
+    steps:
+      - name: Validate version format
+        uses: uniport/workflows/.github/actions/base/validate-version@ci-migration
+        with:
+          version: ${{ inputs.version }}
+
+      # Generate a token for the Uniport GitHub App
+      - name: Generate GitHub App Token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.UNIPORT_APP_ID }}
+          private-key: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            uniport-deployment
+            
+      # Add this to wait for token propagation
+      - name: Wait for Token Propagation
+        run: sleep 10
+
+      - name: Checkout deployment repo
+        uses: actions/checkout@v4
+        with:
+          repository: uniport/uniport-deployment
+          token: ${{ steps.app-token.outputs.token }}
+          ref: ${{ inputs.branch }}
+          path: deployment-repo
+
+      - name: Configure Git user
+        run: |
+          cd deployment-repo
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Configure deployment
+        run: |
+          cd deployment-repo
+          ./updateVersion.sh "${{ inputs.component_name }}" "${{ inputs.version }}"
+          git push origin ${{ inputs.branch }}
+
+      - name: Build summary
+        run: |
+          echo "## Deploy DEV Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **version**: \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **branch**: \`${{ inputs.branch }}\`" >> $GITHUB_STEP_SUMMARY

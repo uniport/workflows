@@ -1,0 +1,12 @@
+# @see https://github.com/actions/runner-images/issues/10977#issuecomment-2681219742
+name: Disable man-db triggers
+description: Disables man-db triggers on Linux runners to optimize GitHub Actions
+runs:
+  using: composite
+  steps:
+    - name: Disable man-db triggers on Linux
+      if: runner.os == 'Linux'
+      run: |
+        echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null
+        sudo dpkg-reconfigure man-db
+      shell: bash
