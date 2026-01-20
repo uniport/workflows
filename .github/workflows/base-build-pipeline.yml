@@ -97,6 +97,8 @@ jobs:
       has_frontend: ${{ inputs.has_frontend }}
       needs_npm_access: ${{ inputs.needs_npm_access }}
       npmrc_path: ${{ inputs.npmrc_path }}
+    outputs:
+      version: ${{ steps.maven.outputs.VERSION }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
       NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
