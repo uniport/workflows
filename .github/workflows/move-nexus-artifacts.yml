@@ -65,7 +65,7 @@ jobs:
 
       - name: Read Project Properties
         id: properties
-        uses: ./.github/actions/setup-maven-build-variable
+        uses: uniport/workflows/.github/actions/setup-maven-build-variable@main
 
       - name: Setup Variables
         id: variables
