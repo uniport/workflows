@@ -21,6 +21,11 @@ on:
         required: false
         type: boolean
         default: true
+      deployment_branch:
+        description: 'The branch to use in the uniport-deployment repository'
+        type: string
+        default: 'main'
+
 
       # === Frontend ===
       has_frontend:
@@ -115,7 +120,7 @@ jobs:
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       component_name: ${{ inputs.component_name }}
-      branch: ${{ inputs.deploy_branch }}
+      branch: ${{ inputs.deployment_branch }}
     secrets:
       UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
 
