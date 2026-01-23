@@ -90,6 +90,9 @@ on:
       NEXUS_NPM_TOKEN_WRITE:
         required: false
 
+permissions:
+  contents: read
+  checks: write
 
 # Prevent running builds for the same branch in parallel
 # New workflows will cancel existing workflows
