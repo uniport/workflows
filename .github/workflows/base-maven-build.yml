@@ -138,6 +138,12 @@ jobs:
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: success() || failure()
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
+
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
 
@@ -146,6 +152,12 @@ jobs:
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
 
+      - name: Publish Checkstyle Report
+        uses: jwgmeligmeyling/checkstyle-github-action@master
+        if: success() || failure()
+        with:
+          path: '**/checkstyle-result.xml'
+
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
 
@@ -153,6 +165,12 @@ jobs:
       - name: Run Spotbugs
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
+
+      - name: Publish SpotBugs Report
+        uses: jwgmeligmeyling/spotbugs-github-action@master
+        if: success() || failure()
+        with:
+          path: '**/spotbugsXml.xml'
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
