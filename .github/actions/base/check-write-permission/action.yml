@@ -13,16 +13,32 @@ runs:
       id: check
       shell: bash
       run: |
+        echo "::debug::Checking checks:write permission for repo: ${{ github.repository }}"
+        echo "::debug::Event name: ${{ github.event_name }}"
+        echo "::debug::Actor: ${{ github.actor }}"
+
         # Test if we have checks:write permission by attempting to create a check run.
         # 422 = permission granted (invalid request body), 403 = no permission
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
           -H "Authorization: Bearer ${{ github.token }}" \
           -H "Accept: application/vnd.github+json" \
           "https://api.github.com/repos/${{ github.repository }}/check-runs" \
           -d '{}')
+
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        BODY=$(echo "$RESPONSE" | sed '$d')
+
+        echo "::debug::API response code: $HTTP_CODE"
+        echo "::debug::API response body: $BODY"
+
         if [[ "$HTTP_CODE" != "403" ]]; then
+          echo "::debug::Permission check passed (HTTP $HTTP_CODE)"
           echo "has_permission=true" >> $GITHUB_OUTPUT
+          echo "✅ checks:write permission available"
         else
+          echo "::debug::Permission check failed (HTTP 403)"
           echo "has_permission=false" >> $GITHUB_OUTPUT
           echo "::notice::checks:write permission not available"
         fi
+
+        echo "::debug::Output has_permission=$(grep has_permission $GITHUB_OUTPUT | cut -d= -f2)"

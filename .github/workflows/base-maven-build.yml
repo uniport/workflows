@@ -143,11 +143,31 @@ jobs:
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/check-write-permission@main
 
+      - name: Debug permission check result
+        if: ${{ success() || failure() }}
+        run: |
+          echo "::debug::permissions step outcome: ${{ steps.permissions.outcome }}"
+          echo "::debug::permissions step conclusion: ${{ steps.permissions.conclusion }}"
+          echo "::debug::has_permission output: '${{ steps.permissions.outputs.has_permission }}'"
+          echo "📋 Permission check result: has_permission=${{ steps.permissions.outputs.has_permission }}"
+
       - name: Publish Test Report
+        id: test_report
         uses: mikepenz/action-junit-report@v5
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
+
+      - name: Debug Test Report status
+        if: ${{ success() || failure() }}
+        run: |
+          echo "::debug::test_report step outcome: ${{ steps.test_report.outcome }}"
+          echo "::debug::condition was: (success() || failure()) && '${{ steps.permissions.outputs.has_permission }}' == 'true'"
+          if [[ "${{ steps.test_report.outcome }}" == "skipped" ]]; then
+            echo "⏭️ Test Report was skipped (has_permission=${{ steps.permissions.outputs.has_permission }})"
+          else
+            echo "✅ Test Report step ran with outcome: ${{ steps.test_report.outcome }}"
+          fi
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
