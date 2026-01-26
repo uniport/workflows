@@ -1,0 +1,53 @@
+name: Checkstyle Summary
+description: Renders Checkstyle results as a summary table with clickable links
+
+inputs:
+  path:
+    description: 'Glob pattern to find checkstyle-result.xml files'
+    required: false
+    default: '**/checkstyle-result.xml'
+
+runs:
+  using: composite
+  steps:
+    - name: Render Checkstyle Summary
+      shell: bash
+      env:
+        GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}
+        PATTERN: ${{ inputs.path }}
+      run: |
+        echo "## Checkstyle Results" >> $GITHUB_STEP_SUMMARY
+
+        violations=0
+        echo "| Severity | File | Line | Message |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|------|------|---------|" >> $GITHUB_STEP_SUMMARY
+
+        for xml_file in $(find . -name 'checkstyle-result.xml' -type f 2>/dev/null); do
+          current_file=""
+          relative_path=""
+          while IFS= read -r line; do
+            if [[ $line =~ \<file\ name=\"([^\"]+)\" ]]; then
+              current_file="${BASH_REMATCH[1]}"
+              # Extract relative path for the link
+              relative_path=$(echo "$current_file" | sed 's|.*/\(src/\)|\1|; s|.*/\(pom.xml\)|\1|')
+            elif [[ $line =~ \<error\ line=\"([^\"]+)\".*severity=\"([^\"]+)\".*message=\"([^\"]+)\" ]]; then
+              line_num="${BASH_REMATCH[1]}"
+              severity="${BASH_REMATCH[2]}"
+              message="${BASH_REMATCH[3]}"
+              # HTML decode common entities
+              message=$(echo "$message" | sed "s/&apos;/'/g; s/&quot;/\"/g; s/&lt;/</g; s/&gt;/>/g; s/&amp;/\&/g")
+              sev_icon=$([[ "$severity" == "error" ]] && echo "🔴" || echo "🟡")
+              file_link="[${current_file##*/}](${GITHUB_REPO_URL}/${relative_path}#L${line_num})"
+              echo "| $sev_icon $severity | $file_link | $line_num | $message |" >> $GITHUB_STEP_SUMMARY
+              ((violations++))
+            fi
+          done < "$xml_file"
+        done
+
+        if [ "$violations" -eq 0 ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ No violations found" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Total: $violations violation(s)**" >> $GITHUB_STEP_SUMMARY
+        fi

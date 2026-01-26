@@ -1,0 +1,62 @@
+name: SpotBugs Summary
+description: Renders SpotBugs results as a summary table with clickable links
+
+inputs:
+  path:
+    description: 'Glob pattern to find spotbugsXml.xml files'
+    required: false
+    default: '**/spotbugsXml.xml'
+
+runs:
+  using: composite
+  steps:
+    - name: Render SpotBugs Summary
+      shell: bash
+      env:
+        GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}
+        PATTERN: ${{ inputs.path }}
+      run: |
+        echo "## SpotBugs Results" >> $GITHUB_STEP_SUMMARY
+
+        bugs_found=false
+        echo "| Severity | File | Line | Bug Type | Message |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|------|------|----------|---------|" >> $GITHUB_STEP_SUMMARY
+
+        for xml_file in $(find . -name 'spotbugsXml.xml' -type f 2>/dev/null); do
+          # Get the module path from xml location (e.g., ./backend/target/spotbugsXml.xml -> backend)
+          module_path=$(dirname "$xml_file" | sed 's|^\./||; s|/target$||')
+
+          # Parse each BugInstance using awk
+          awk -v repo_url="$GITHUB_REPO_URL" -v module="$module_path" '
+            /<BugInstance/ {
+              priority = ""; type = ""; message = ""; file = ""; line = ""
+              match($0, /priority="([^"]*)"/, p); if (p[1]) priority = p[1]
+              match($0, /type="([^"]*)"/, t); if (t[1]) type = t[1]
+            }
+            /<ShortMessage>/ {
+              gsub(/<[^>]*>/, ""); gsub(/^[ \t]+|[ \t]+$/, ""); message = $0
+            }
+            /<SourceLine.*primary="true"/ || (/<SourceLine/ && file == "") {
+              match($0, /sourcepath="([^"]*)"/, s); if (s[1]) file = s[1]
+              match($0, /start="([^"]*)"/, l); if (l[1]) line = l[1]
+            }
+            /<\/BugInstance>/ {
+              if (file != "" && type != "") {
+                sev = (priority == 1) ? "🔴 High" : (priority == 2) ? "🟠 Medium" : "🟡 Low"
+                # Build file link - file is like com/example/MyClass.java, need full path
+                file_path = module "/src/main/java/" file
+                file_link = "[" file "](" repo_url "/" file_path "#L" line ")"
+                printf "| %s | %s | %s | %s | %s |\n", sev, file_link, line, type, message
+              }
+            }
+          ' "$xml_file" >> $GITHUB_STEP_SUMMARY && bugs_found=true
+        done
+
+        if ! grep -q "| 🔴\|| 🟠\|| 🟡" $GITHUB_STEP_SUMMARY 2>/dev/null; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ No bugs found" >> $GITHUB_STEP_SUMMARY
+        else
+          total=$(grep -c "| 🔴\|| 🟠\|| 🟡" $GITHUB_STEP_SUMMARY 2>/dev/null || echo 0)
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Total: $total bug(s)**" >> $GITHUB_STEP_SUMMARY
+        fi

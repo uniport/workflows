@@ -153,7 +153,7 @@ jobs:
 
       - name: Publish Test Results
         id: test_report
-        uses: EnricoMi/publish-unit-test-result-action/composite@v2
+        uses: EnricoMi/publish-unit-test-result-action/macos@v2
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           files: '**/target/surefire-reports/TEST-*.xml'
@@ -188,18 +188,7 @@ jobs:
 
       - name: Checkstyle Summary
         if: ${{ success() || failure() }}
-        run: |
-          echo "## Checkstyle Results" >> $GITHUB_STEP_SUMMARY
-          total=0
-          for file in $(find . -name 'checkstyle-result.xml' -type f); do
-            count=$(grep -c '<error' "$file" 2>/dev/null || echo 0)
-            total=$((total + count))
-          done
-          if [ "$total" -eq 0 ]; then
-            echo "✅ No violations found" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ **$total violation(s) found**" >> $GITHUB_STEP_SUMMARY
-          fi
+        uses: uniport/workflows/.github/actions/base/checkstyle-summary@main
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
@@ -217,18 +206,7 @@ jobs:
 
       - name: SpotBugs Summary
         if: ${{ success() || failure() }}
-        run: |
-          echo "## SpotBugs Results" >> $GITHUB_STEP_SUMMARY
-          total=0
-          for file in $(find . -name 'spotbugsXml.xml' -type f); do
-            count=$(grep -c '<BugInstance' "$file" 2>/dev/null || echo 0)
-            total=$((total + count))
-          done
-          if [ "$total" -eq 0 ]; then
-            echo "✅ No bugs found" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ **$total bug(s) found**" >> $GITHUB_STEP_SUMMARY
-          fi
+        uses: uniport/workflows/.github/actions/base/spotbugs-summary@main
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
