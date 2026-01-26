@@ -151,13 +151,15 @@ jobs:
           echo "::debug::has_permission output: '${{ steps.permissions.outputs.has_permission }}'"
           echo "📋 Permission check result: has_permission=${{ steps.permissions.outputs.has_permission }}"
 
-      - name: Publish Test Report
+      - name: Publish Test Results
         id: test_report
-        uses: mikepenz/action-junit-report@v5
+        uses: EnricoMi/publish-unit-test-result-action@v2
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
-          report_paths: '**/target/surefire-reports/TEST-*.xml'
-          commit: ${{ github.sha }}
+          files: '**/target/surefire-reports/TEST-*.xml'
+          check_name: 'Unit Test Results'
+          comment_mode: 'off'
+          action_fail_on_inconclusive: true
 
       - name: Debug Test Report status
         if: ${{ success() || failure() }}
