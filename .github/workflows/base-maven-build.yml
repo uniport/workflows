@@ -157,6 +157,7 @@ jobs:
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
+          commit: ${{ github.sha }}
 
       - name: Debug Test Report status
         if: ${{ success() || failure() }}
@@ -182,6 +183,7 @@ jobs:
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           path: '**/checkstyle-result.xml'
+          commit: ${{ github.sha }}
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
@@ -196,6 +198,7 @@ jobs:
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           path: '**/spotbugsXml.xml'
+          commit: ${{ github.sha }}
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
