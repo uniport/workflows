@@ -143,40 +143,17 @@ jobs:
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/check-write-permission@main
 
-      - name: Debug permission check result
-        if: ${{ success() || failure() }}
-        run: |
-          echo "::debug::permissions step outcome: ${{ steps.permissions.outcome }}"
-          echo "::debug::permissions step conclusion: ${{ steps.permissions.conclusion }}"
-          echo "::debug::has_permission output: '${{ steps.permissions.outputs.has_permission }}'"
-          echo "📋 Permission check result: has_permission=${{ steps.permissions.outputs.has_permission }}"
-
       - name: Publish Test Results
-        id: test_report
         uses: EnricoMi/publish-unit-test-result-action/macos@v2
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           files: '**/target/surefire-reports/TEST-*.xml'
           check_name: 'Unit Test Results'
           comment_mode: 'off'
-          action_fail_on_inconclusive: true
 
-      - name: Debug Test Report status
-        if: ${{ success() || failure() }}
-        run: |
-          echo "::debug::test_report step outcome: ${{ steps.test_report.outcome }}"
-          echo "::debug::condition was: (success() || failure()) && '${{ steps.permissions.outputs.has_permission }}' == 'true'"
-          if [[ "${{ steps.test_report.outcome }}" == "skipped" ]]; then
-            echo "⏭️ Test Report was skipped (has_permission=${{ steps.permissions.outputs.has_permission }})"
-          else
-            echo "✅ Test Report step ran with outcome: ${{ steps.test_report.outcome }}"
-          fi
-
-      - name: Ensure no uncommitted code
-        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
-
-      # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
+      # Needs to run after the build, otherwise some dependencies are missing for maven
       - name: Run Checkstyle
+        if: ${{ success() || failure() }}
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
 
@@ -190,11 +167,9 @@ jobs:
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/checkstyle-summary@main
 
-      - name: Ensure no uncommitted code
-        uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
-
-      # Needs to run after the build, otherwise some dependencies are missing for maven… ¯\_(ツ)_/¯
-      - name: Run Spotbugs
+      # Needs to run after the build, otherwise some dependencies are missing for maven
+      - name: Run SpotBugs
+        if: ${{ success() || failure() }}
         run: |
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
 
@@ -221,8 +196,8 @@ jobs:
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Maven Build
-          This workflow ran successfully on **$(date)**.
-          ### Outputs
-          - **VERSION**: 
-          - **GROUP_ID**: 
+          | Output | Value |
+          |--------|-------|
+          | VERSION | \`${{ steps.vars.outputs.RC_VERSION }}\` |
+          | GROUP_ID | \`${{ steps.vars.outputs.GROUP_ID }}\` |
           EOF

@@ -12,17 +12,31 @@ runs:
   steps:
     - name: Render Checkstyle Summary
       shell: bash
+      continue-on-error: true
       env:
         GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}
         PATTERN: ${{ inputs.path }}
       run: |
+        set +e  # Don't exit on error
         echo "## Checkstyle Results" >> $GITHUB_STEP_SUMMARY
+
+        # Check if any report files exist
+        xml_files=$(find . -name 'checkstyle-result.xml' -type f 2>/dev/null)
+        if [ -z "$xml_files" ]; then
+          echo "📭 No reports available" >> $GITHUB_STEP_SUMMARY
+          exit 0
+        fi
 
         violations=0
         echo "| Severity | File | Line | Message |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|------|------|---------|" >> $GITHUB_STEP_SUMMARY
 
-        for xml_file in $(find . -name 'checkstyle-result.xml' -type f 2>/dev/null); do
+        for xml_file in $xml_files; do
+          if [ ! -r "$xml_file" ]; then
+            echo "⚠️ Could not read: $xml_file" >> $GITHUB_STEP_SUMMARY
+            continue
+          fi
+
           current_file=""
           relative_path=""
           while IFS= read -r line; do
@@ -39,9 +53,9 @@ runs:
               sev_icon=$([[ "$severity" == "error" ]] && echo "🔴" || echo "🟡")
               file_link="[${current_file##*/}](${GITHUB_REPO_URL}/${relative_path}#L${line_num})"
               echo "| $sev_icon $severity | $file_link | $line_num | $message |" >> $GITHUB_STEP_SUMMARY
-              ((violations++))
+              ((violations++)) || true
             fi
-          done < "$xml_file"
+          done < "$xml_file" 2>/dev/null || echo "⚠️ Error parsing: $xml_file" >> $GITHUB_STEP_SUMMARY
         done
 
         if [ "$violations" -eq 0 ]; then
