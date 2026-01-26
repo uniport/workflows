@@ -179,11 +179,10 @@ jobs:
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
 
       - name: Publish Checkstyle Report
-        uses: jwgmeligmeyling/checkstyle-github-action@master
+        uses: lcollins/checkstyle-github-action@v3.1.0
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           path: '**/checkstyle-result.xml'
-          commit: ${{ github.sha }}
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
@@ -194,11 +193,10 @@ jobs:
           mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
 
       - name: Publish SpotBugs Report
-        uses: jwgmeligmeyling/spotbugs-github-action@master
+        uses: lcollins/spotbugs-github-action@v3.1.0
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           path: '**/spotbugsXml.xml'
-          commit: ${{ github.sha }}
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
