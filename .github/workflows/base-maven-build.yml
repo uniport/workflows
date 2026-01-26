@@ -153,7 +153,7 @@ jobs:
 
       - name: Publish Test Results
         id: test_report
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
         with:
           files: '**/target/surefire-reports/TEST-*.xml'
