@@ -1,0 +1,38 @@
+name: Publish Checkstyle Report
+description: Runs Checkstyle, publishes report if files exist, and renders summary
+
+inputs:
+  has_permission:
+    description: 'Whether the workflow has write permission for checks'
+    required: true
+  settings_file:
+    description: 'Path to the Maven settings file'
+    required: false
+    default: '.github/settings.xml'
+
+runs:
+  using: composite
+  steps:
+    - name: Run Checkstyle
+      shell: bash
+      run: |
+        mvn -B -V --no-transfer-progress --settings ${{ inputs.settings_file }} initialize checkstyle:check
+
+    - name: Check for Checkstyle results
+      id: checkstyle_results
+      shell: bash
+      run: |
+        if find . -name 'checkstyle-result.xml' -type f -print -quit | grep -q .; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Publish Checkstyle Report
+      uses: lcollins/checkstyle-github-action@v3.1.0
+      if: ${{ steps.checkstyle_results.outputs.found == 'true' && inputs.has_permission == 'true' }}
+      with:
+        path: '**/checkstyle-result.xml'
+
+    - name: Checkstyle Summary
+      uses: uniport/workflows/.github/actions/base/checkstyle-summary@main

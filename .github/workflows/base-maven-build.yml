@@ -143,45 +143,25 @@ jobs:
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/check-write-permission@main
 
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action/macos@v2
-        if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
+      - name: Publish Surefire Report
+        if: ${{ success() || failure() }}
+        uses: uniport/workflows/.github/actions/base/publish-surefire-report@main
         with:
-          files: '**/target/surefire-reports/TEST-*.xml'
-          check_name: 'Unit Test Results'
-          comment_mode: 'off'
+          has_permission: ${{ steps.permissions.outputs.has_permission }}
 
       # Needs to run after the build, otherwise some dependencies are missing for maven
-      - name: Run Checkstyle
-        if: ${{ success() || failure() }}
-        run: |
-          mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize checkstyle:check
-
       - name: Publish Checkstyle Report
-        uses: lcollins/checkstyle-github-action@v3.1.0
-        if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
-        with:
-          path: '**/checkstyle-result.xml'
-
-      - name: Checkstyle Summary
         if: ${{ success() || failure() }}
-        uses: uniport/workflows/.github/actions/base/checkstyle-summary@main
+        uses: uniport/workflows/.github/actions/base/publish-checkstyle-report@main
+        with:
+          has_permission: ${{ steps.permissions.outputs.has_permission }}
 
       # Needs to run after the build, otherwise some dependencies are missing for maven
-      - name: Run SpotBugs
-        if: ${{ success() || failure() }}
-        run: |
-          mvn -B -V --no-transfer-progress --settings .github/settings.xml initialize spotbugs:check
-
       - name: Publish SpotBugs Report
-        uses: lcollins/spotbugs-github-action@v3.1.0
-        if: ${{ (success() || failure()) && steps.permissions.outputs.has_permission == 'true' }}
-        with:
-          path: '**/spotbugsXml.xml'
-
-      - name: SpotBugs Summary
         if: ${{ success() || failure() }}
-        uses: uniport/workflows/.github/actions/base/spotbugs-summary@main
+        uses: uniport/workflows/.github/actions/base/publish-spotbugs-report@main
+        with:
+          has_permission: ${{ steps.permissions.outputs.has_permission }}
 
       - name: Ensure no uncommitted code
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main

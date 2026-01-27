@@ -1,0 +1,38 @@
+name: Publish SpotBugs Report
+description: Runs SpotBugs, publishes report if files exist, and renders summary
+
+inputs:
+  has_permission:
+    description: 'Whether the workflow has write permission for checks'
+    required: true
+  settings_file:
+    description: 'Path to the Maven settings file'
+    required: false
+    default: '.github/settings.xml'
+
+runs:
+  using: composite
+  steps:
+    - name: Run SpotBugs
+      shell: bash
+      run: |
+        mvn -B -V --no-transfer-progress --settings ${{ inputs.settings_file }} initialize spotbugs:check
+
+    - name: Check for SpotBugs results
+      id: spotbugs_results
+      shell: bash
+      run: |
+        if find . -name 'spotbugsXml.xml' -type f -print -quit | grep -q .; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Publish SpotBugs Report
+      uses: lcollins/spotbugs-github-action@v3.1.0
+      if: ${{ steps.spotbugs_results.outputs.found == 'true' && inputs.has_permission == 'true' }}
+      with:
+        path: '**/spotbugsXml.xml'
+
+    - name: SpotBugs Summary
+      uses: uniport/workflows/.github/actions/base/spotbugs-summary@main

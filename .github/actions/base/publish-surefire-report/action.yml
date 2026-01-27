@@ -1,0 +1,28 @@
+name: Publish Surefire Report
+description: Publishes unit test results if surefire report files exist
+
+inputs:
+  has_permission:
+    description: 'Whether the workflow has write permission for checks'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check for test results
+      id: test_results
+      shell: bash
+      run: |
+        if find . -path '*/target/surefire-reports/TEST-*.xml' -print -quit | grep -q .; then
+          echo "found=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "found=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action/macos@v2
+      if: ${{ steps.test_results.outputs.found == 'true' && inputs.has_permission == 'true' }}
+      with:
+        files: '**/target/surefire-reports/TEST-*.xml'
+        check_name: 'Unit Test Results'
+        comment_mode: 'off'
