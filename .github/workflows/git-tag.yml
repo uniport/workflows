@@ -39,7 +39,7 @@ jobs:
       contents: write # create git tag
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # to fetch everything to be able to tag any commit
           ref: ${{ github.ref }}
