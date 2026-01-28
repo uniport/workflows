@@ -1,10 +1,7 @@
 name: Check Changelog
 
 on:
-  pull_request:
-    types: [assigned, opened, synchronize, reopened, labeled, unlabeled]
-    branches:
-      - main
+  workflow_call:
 
 jobs:
   check:
