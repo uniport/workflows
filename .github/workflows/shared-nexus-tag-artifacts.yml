@@ -1,5 +1,5 @@
 # Workflow for staging (tagging + associating) artifacts of various types (Docker, Helm, Maven, NPM) in Nexus
-name: Tag Nexus Artifacts
+name: '[Shared] Nexus Tag Artifacts'
 
 on:
   workflow_call:
@@ -162,7 +162,7 @@ jobs:
   # Create tags for enabled artifact types
   tag_mvn:
     name: Tag
-    uses: ./.github/workflows/base-nexus-tag-create.yml
+    uses: ./.github/workflows/shared-nexus-tag-create.yml
     needs: [setup]
     if: ${{ inputs.tag_maven }}
     with:
@@ -173,7 +173,7 @@ jobs:
 
   tag_docker:
     name: Tag
-    uses: ./.github/workflows/base-nexus-tag-create.yml
+    uses: ./.github/workflows/shared-nexus-tag-create.yml
     needs: [setup]
     if: ${{ inputs.tag_docker }}
     with:
@@ -184,7 +184,7 @@ jobs:
 
   tag_helm:
     name: Tag
-    uses: ./.github/workflows/base-nexus-tag-create.yml
+    uses: ./.github/workflows/shared-nexus-tag-create.yml
     needs: [setup]
     if: ${{ inputs.tag_helm }}
     with:
@@ -195,7 +195,7 @@ jobs:
 
   tag_npm:
     name: Tag
-    uses: ./.github/workflows/base-nexus-tag-create.yml
+    uses: ./.github/workflows/shared-nexus-tag-create.yml
     needs: [setup]
     if: ${{ inputs.tag_npm }}
     with:
@@ -207,7 +207,7 @@ jobs:
   # Associate artifacts with tags
   associate_mvn:
     name: Associate
-    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    uses: ./.github/workflows/shared-nexus-tag-associate.yml
     needs: [setup, tag_mvn]
     if: ${{ inputs.tag_maven }}
     with:
@@ -220,7 +220,7 @@ jobs:
 
   associate_docker:
     name: Associate
-    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    uses: ./.github/workflows/shared-nexus-tag-associate.yml
     needs: [setup, tag_docker]
     if: ${{ inputs.tag_docker }}
     with:
@@ -233,7 +233,7 @@ jobs:
 
   associate_helm:
     name: Associate
-    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    uses: ./.github/workflows/shared-nexus-tag-associate.yml
     needs: [setup, tag_helm]
     if: ${{ inputs.tag_helm }}
     with:
@@ -246,7 +246,7 @@ jobs:
 
   associate_npm:
     name: Associate
-    uses: ./.github/workflows/base-nexus-tag-associate.yml
+    uses: ./.github/workflows/shared-nexus-tag-associate.yml
     needs: [setup, tag_npm]
     if: ${{ inputs.tag_npm }}
     with:

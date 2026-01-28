@@ -1,4 +1,4 @@
-name: Build/Release
+name: '[Shared] Build Pipeline'
 run-name: 'Build & release "${{ inputs.component_name }}" (#${{ github.run_number }}) by ${{ github.actor }} on ${{ github.ref_name }}'
   
 
@@ -99,7 +99,7 @@ concurrency:
 jobs:
   maven:
     name: Maven
-    uses: ./.github/workflows/base-maven-build.yml
+    uses: ./.github/workflows/shared-maven-build.yml
     with:
       java_version: ${{ inputs.java_version }}
       has_frontend: ${{ inputs.has_frontend }}
@@ -115,7 +115,7 @@ jobs:
     name: Deploy
     if: ${{ inputs.deploy_to_dev }}
     needs: [maven]
-    uses: ./.github/workflows/base-deploy-dev.yml
+    uses: ./.github/workflows/shared-deploy-dev.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       component_name: ${{ inputs.component_name }}
@@ -127,7 +127,7 @@ jobs:
     name: Update Archetype
     if: ${{ inputs.update_archetype }}
     needs: [maven]
-    uses: ./.github/workflows/base-update-archetype.yml
+    uses: ./.github/workflows/shared-update-archetype.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       component_name: ${{ inputs.component_name }}
@@ -138,7 +138,7 @@ jobs:
     name: Tag Artifacts
     if: ${{ inputs.tag_docker || inputs.tag_maven || inputs.tag_npm || inputs.tag_helm}}
     needs: [maven]
-    uses: ./.github/workflows/base-nexus-tag-artifacts.yml
+    uses: ./.github/workflows/shared-nexus-tag-artifacts.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
       group_id: ${{ needs.maven.outputs.GROUP_ID }}

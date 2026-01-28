@@ -1,5 +1,5 @@
 # Workflow for associating components that belong to a Nexus tag
-name: Associate Nexus Tag
+name: '[Shared] Nexus Tag Associate'
 run-name: 'Nexus associate tag workflow #${{ github.run_number }} triggered by ${{ github.actor }}'
 
 on:

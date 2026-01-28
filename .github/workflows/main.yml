@@ -1,4 +1,4 @@
-name: Main
+name: '# Main'
 run-name: 'Main workflow #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
 
 on:

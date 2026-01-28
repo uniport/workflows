@@ -1,5 +1,5 @@
 # Workflow for creating a Nexus tag
-name: Create Nexus Tag
+name: '[Shared] Nexus Tag Create'
 run-name: 'Nexus create tag workflow #${{ github.run_number }} triggered by ${{ github.actor }}'
 
 on:

@@ -1,5 +1,5 @@
 # Workflow for updating a component version in the Uniport Archetype
-name: Update Archetype
+name: '[Shared] Update Archetype'
 run-name: 'Update archetype #${{ github.run_number }} triggered by ${{ github.actor }}'
 
 on:

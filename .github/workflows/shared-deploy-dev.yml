@@ -1,5 +1,5 @@
 # Workflow for deploying a component version to the DEV environment
-name: Deploy DEV
+name: '[Shared] Deploy DEV'
 run-name: 'DEV deployment #${{ github.run_number }} triggered by ${{ github.actor }} on ${{ github.ref }}'
 
 on:

@@ -1,4 +1,4 @@
-name: 'Maven Build & Publish'
+name: '[Shared] Maven Build'
 run-name: 'Maven build #${{ github.run_number }} · ${{ github.ref_name }} · triggered by ${{ github.actor }}'
 
 on:
