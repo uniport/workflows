@@ -11,66 +11,96 @@ runs:
   using: composite
   steps:
     - name: Render SpotBugs Summary
-      shell: bash
+      shell: python3 {0}
       continue-on-error: true
       env:
         GITHUB_REPO_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}
-        PATTERN: ${{ inputs.path }}
       run: |
-        set +e  # Don't exit on error
-        echo "## SpotBugs Results" >> $GITHUB_STEP_SUMMARY
+        import glob
+        import os
+        import xml.etree.ElementTree as ET
 
-        # Check if any report files exist
-        xml_files=$(find . -name 'spotbugsXml.xml' -type f 2>/dev/null)
-        if [ -z "$xml_files" ]; then
-          echo "📭 No reports available" >> $GITHUB_STEP_SUMMARY
-          exit 0
-        fi
+        repo_url = os.environ["GITHUB_REPO_URL"]
+        summary_file = os.environ["GITHUB_STEP_SUMMARY"]
 
-        bugs_found=false
-        echo "| Severity | File | Line | Bug Type | Message |" >> $GITHUB_STEP_SUMMARY
-        echo "|----------|------|------|----------|---------|" >> $GITHUB_STEP_SUMMARY
+        SEVERITY = {"1": "🔴 High", "2": "🟠 Medium", "3": "🟡 Low"}
 
-        for xml_file in $xml_files; do
-          if [ ! -r "$xml_file" ]; then
-            echo "⚠️ Could not read: $xml_file" >> $GITHUB_STEP_SUMMARY
-            continue
-          fi
+        xml_files = glob.glob("**/spotbugsXml.xml", recursive=True)
 
-          # Get the module path from xml location (e.g., ./backend/target/spotbugsXml.xml -> backend)
-          module_path=$(dirname "$xml_file" | sed 's|^\./||; s|/target$||')
+        lines = ["## SpotBugs Results", ""]
 
-          # Parse each BugInstance using awk
-          awk -v repo_url="$GITHUB_REPO_URL" -v module="$module_path" '
-            /<BugInstance/ {
-              priority = ""; type = ""; message = ""; file = ""; line = ""
-              match($0, /priority="([^"]*)"/, p); if (p[1]) priority = p[1]
-              match($0, /type="([^"]*)"/, t); if (t[1]) type = t[1]
-            }
-            /<ShortMessage>/ {
-              gsub(/<[^>]*>/, ""); gsub(/^[ \t]+|[ \t]+$/, ""); message = $0
-            }
-            /<SourceLine.*primary="true"/ || (/<SourceLine/ && file == "") {
-              match($0, /sourcepath="([^"]*)"/, s); if (s[1]) file = s[1]
-              match($0, /start="([^"]*)"/, l); if (l[1]) line = l[1]
-            }
-            /<\/BugInstance>/ {
-              if (file != "" && type != "") {
-                sev = (priority == 1) ? "🔴 High" : (priority == 2) ? "🟠 Medium" : "🟡 Low"
-                # Build file link - file is like com/example/MyClass.java, need full path
-                file_path = module "/src/main/java/" file
-                file_link = "[" file "](" repo_url "/" file_path "#L" line ")"
-                printf "| %s | %s | %s | %s | %s |\n", sev, file_link, line, type, message
-              }
-            }
-          ' "$xml_file" >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "⚠️ Error parsing: $xml_file" >> $GITHUB_STEP_SUMMARY
-        done
+        if not xml_files:
+            lines.append("📭 No reports available")
+            with open(summary_file, "a") as f:
+                f.write("\n".join(lines) + "\n")
+            raise SystemExit(0)
 
-        if ! grep -q "| 🔴\|| 🟠\|| 🟡" $GITHUB_STEP_SUMMARY 2>/dev/null; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ No bugs found" >> $GITHUB_STEP_SUMMARY
-        else
-          total=$(grep -c "| 🔴\|| 🟠\|| 🟡" $GITHUB_STEP_SUMMARY 2>/dev/null || echo 0)
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Total: $total bug(s)**" >> $GITHUB_STEP_SUMMARY
-        fi
+        lines.append("| Severity | File | Line | Bug Type | Message |")
+        lines.append("|----------|------|------|----------|---------|")
+
+        total = 0
+
+        for xml_file in sorted(xml_files):
+            # e.g. backend/target/spotbugsXml.xml -> backend
+            module = os.path.dirname(xml_file).removesuffix("/target").removeprefix("./")
+
+            try:
+                tree = ET.parse(xml_file)
+            except ET.ParseError:
+                lines.append(f"| ⚠️ | Error parsing: {xml_file} | | | |")
+                continue
+
+            root = tree.getroot()
+
+            # Resolve source root from the XML's SrcDir element instead of
+            # hardcoding src/main/java.  The SrcDir is an absolute path like
+            # /home/runner/work/repo/repo/backend/src/main/java — we only
+            # need the part relative to the module directory.
+            src_suffix = "src/main/java"
+            for sd in root.iter("SrcDir"):
+                if sd.text:
+                    parts = sd.text.split(f"/{module}/", 1)
+                    if len(parts) == 2:
+                        src_suffix = parts[1].rstrip("/")
+                    break
+
+            for bug in root.iter("BugInstance"):
+                bug_type = bug.get("type", "")
+                priority = bug.get("priority", "3")
+                sev = SEVERITY.get(priority, "🟡 Low")
+
+                message = ""
+                msg_el = bug.find(".//ShortMessage")
+                if msg_el is not None and msg_el.text:
+                    message = msg_el.text.strip()
+
+                source_file = ""
+                source_line = ""
+                # Prefer primary SourceLine, fall back to first
+                for sl in bug.iter("SourceLine"):
+                    sp = sl.get("sourcepath", "")
+                    ln = sl.get("start", "")
+                    if not source_file and sp:
+                        source_file = sp
+                        source_line = ln
+                    if sl.get("primary") == "true" and sp:
+                        source_file = sp
+                        source_line = ln
+                        break
+
+                if source_file and bug_type:
+                    file_path = f"{module}/{src_suffix}/{source_file}"
+                    class_name = os.path.basename(source_file)
+                    display = f"{module}: {class_name}" if module else class_name
+                    file_link = f"[`{display}`]({repo_url}/{file_path}#L{source_line})"
+                    lines.append(f"| {sev} | {file_link} | {source_line} | `{bug_type}` | {message} |")
+                    total += 1
+
+        lines.append("")
+        if total == 0:
+            lines.append("✅ No bugs found")
+        else:
+            lines.append(f"**Total: {total} bug(s)**")
+
+        with open(summary_file, "a") as f:
+            f.write("\n".join(lines) + "\n")
