@@ -91,11 +91,11 @@ jobs:
         run: |
           security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
 
-      - name: Setup Helm repositories
-        uses: uniport/workflows/.github/actions/base/add-helm-repositories@main
-        with:
-          username: ${{ env.CI_AUTH_USR }}
-          password: ${{ env.CI_AUTH_PSW }}
+#      - name: Setup Helm repositories
+#        uses: uniport/workflows/.github/actions/base/add-helm-repositories@main
+#        with:
+#          username: ${{ env.CI_AUTH_USR }}
+#          password: ${{ env.CI_AUTH_PSW }}
 
       - name: Login to Docker registry
         uses: docker/login-action@v3
