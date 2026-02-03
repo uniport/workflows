@@ -33,6 +33,11 @@ on:
         required: false
         type: boolean
         default: false
+      maven_verbose:
+        description: 'Enable Maven debug logging (-e -X)'
+        required: false
+        type: boolean
+        default: false
 
       # === NPM Options ===
       needs_npm_access:
@@ -103,6 +108,7 @@ jobs:
     with:
       java_version: ${{ inputs.java_version }}
       has_frontend: ${{ inputs.has_frontend }}
+      maven_verbose: ${{ inputs.maven_verbose }}
       needs_npm_access: ${{ inputs.needs_npm_access }}
       npmrc_path: ${{ inputs.npmrc_path }}
     secrets:

@@ -9,6 +9,11 @@ on:
         description: 'Whether the module has a frontend'
         required: true
         type: boolean
+      maven_verbose:
+        description: 'Enable Maven debug logging (-e -X)'
+        required: false
+        default: false
+        type: boolean
       needs_npm_access:
         description: 'Whether the module needs npm access'
         required: true
@@ -134,7 +139,7 @@ jobs:
 
       - name: Build & deploy with Maven
         run: |
-          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
+          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml ${{ inputs.maven_verbose && '-e -X' || '' }} -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 

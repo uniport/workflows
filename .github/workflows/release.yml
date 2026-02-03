@@ -1,5 +1,4 @@
 name: Release
-run-name: 'Release ${{ inputs.version }} on ${{ inputs.target_branch }}'
 
 on:
   workflow_call:

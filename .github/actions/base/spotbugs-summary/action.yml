@@ -38,6 +38,7 @@ runs:
         lines.append("| Severity | File | Line | Bug Type | Message |")
         lines.append("|----------|------|------|----------|---------|")
 
+        # Collect all source directories for each XML file's project
         total = 0
 
         for xml_file in sorted(xml_files):
@@ -52,17 +53,19 @@ runs:
 
             root = tree.getroot()
 
-            # Resolve source root from the XML's SrcDir element instead of
-            # hardcoding src/main/java.  The SrcDir is an absolute path like
-            # /home/runner/work/repo/repo/backend/src/main/java — we only
-            # need the part relative to the module directory.
-            src_suffix = "src/main/java"
+            # Resolve all possible source roots from the XML's SrcDir elements.
+            # The SrcDir is an absolute path — we only need the part relative to the module directory.
+            src_suffixes = []
             for sd in root.iter("SrcDir"):
                 if sd.text:
+                    # Logic: find the part of the absolute path that follows the module name
+                    # e.g., /home/runner/work/repo/repo/backend/src/main/java -> src/main/java
                     parts = sd.text.split(f"/{module}/", 1)
                     if len(parts) == 2:
-                        src_suffix = parts[1].rstrip("/")
-                    break
+                        src_suffixes.append(parts[1].rstrip("/"))
+            
+            if not src_suffixes:
+                src_suffixes = ["src/main/java"] # Fallback
 
             for bug in root.iter("BugInstance"):
                 bug_type = bug.get("type", "")
@@ -89,7 +92,16 @@ runs:
                         break
 
                 if source_file and bug_type:
-                    file_path = f"{module}/{src_suffix}/{source_file}"
+                    # Dynamically resolve which src_suffix contains the source_file
+                    resolved_suffix = src_suffixes[0]
+                    for suffix in src_suffixes:
+                        # Check if the file exists at this path relative to the repo root
+                        potential_path = f"{module}/{suffix}/{source_file}" if module else f"{suffix}/{source_file}"
+                        if os.path.exists(potential_path):
+                            resolved_suffix = suffix
+                            break
+
+                    file_path = f"{module}/{resolved_suffix}/{source_file}" if module else f"{resolved_suffix}/{source_file}"
                     class_name = os.path.basename(source_file)
                     display = f"{module}: {class_name}" if module else class_name
                     file_link = f"[`{display}`]({repo_url}/{file_path}#L{source_line})"
