@@ -58,6 +58,13 @@ on:
         type: boolean
         default: true
 
+      # === Timeout ===
+      timeout_minutes:
+        description: 'Build timeout in minutes'
+        required: false
+        type: number
+        default: 60
+
       # === Tagging Options ===
       tag_docker:
         description: 'Tag Docker artifacts'
@@ -111,6 +118,7 @@ jobs:
       maven_verbose: ${{ inputs.maven_verbose }}
       needs_npm_access: ${{ inputs.needs_npm_access }}
       npmrc_path: ${{ inputs.npmrc_path }}
+      timeout_minutes: ${{ inputs.timeout_minutes }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
       NEXUS_NPM_TOKEN_READ_ONLY: ${{ secrets.NEXUS_NPM_TOKEN_READ_ONLY }}
