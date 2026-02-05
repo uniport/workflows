@@ -102,10 +102,20 @@ on:
       NEXUS_NPM_TOKEN_WRITE:
         required: false
 
-# Prevent running builds for the same branch in parallel
-# New workflows will cancel existing workflows
+# Concurrency Strategy:
+# Prevents redundant builds by canceling outdated runs within the same context.
+#
+# Examples (assuming workflow name is "Build Pipeline"):
+# 1. Normal Push (e.g., to 'master' branch):
+#    - String: "Build Pipeline-refs/heads/master-"
+#    - Result: New pushes to 'master' cancel any currently running 'master' builds.
+#
+# 2. Pull Request (e.g., Dependabot PR from 'dependabot/maven/sms/assertj-3.27.7'):
+#    - String: "Build Pipeline-refs/heads/master-dependabot/maven/sms/assertj-3.27.7"
+#    - Result: Each PR has a unique 'head_ref', allowing multiple PRs to build in parallel 
+#      without canceling each other, even if they all target 'master'.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref || '' }}
   cancel-in-progress: true
 
 jobs:
