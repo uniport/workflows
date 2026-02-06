@@ -42,7 +42,7 @@ jobs:
       GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
 
