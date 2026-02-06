@@ -1,10 +1,24 @@
+# [Shared] Release Workflow
+#
+# This is the master orchestration for performing a formal production release.
+# It manages semver validation, artifact promotion, and version bumping.
+#
+# Domain: Production Release
+# Contract: Expects a Maven project with semver compliant versions and a CHANGELOG.md.
+# Side Effects: 
+#   - Creates git tags and patch branches.
+#   - Pushes version updates to master/main.
+#   - Modifies internal IPS-Deployment and Archetype repositories.
+#
+# Downstream: Calls move-nexus-artifacts.yml, git-tag.yml, changelog-update.yml, git-patch-branch-create.yml, version-bump.yml, jira-release.yml, update-archetype.yml.
+
 name: Release
 
 on:
   workflow_call:
     inputs:
       version:
-        description: 'The version string'
+        description: 'The version string (e.g., 1.2.0)'
         required: true
         type: string
       target_branch:
@@ -12,15 +26,15 @@ on:
         required: true
         type: string
       promote_docker_helm_artifacts:
-        description: 'Promote docker & helm artifacts'
+        description: 'Promote docker & helm artifacts to release repository'
         default: false
         type: boolean
       promote_maven_artifacts:
-        description: 'Promote maven artifacts'
+        description: 'Promote maven artifacts to release repository'
         default: false
         type: boolean
       promote_npm_artifacts:
-        description: 'Promote npm artifacts'
+        description: 'Promote npm artifacts to release repository'
         default: false
         type: boolean
       create_tag:
@@ -32,11 +46,11 @@ on:
         default: true
         type: boolean
       create_patch_branch:
-        description: 'Create the git patch branch'
+        description: 'Create the git patch branch (e.g., release/1.2)'
         default: true
         type: boolean
       bump_version:
-        description: 'Set the next version'
+        description: 'Set the next snapshot version on the target branch'
         default: true
         type: boolean
       jira_release:
@@ -61,13 +75,13 @@ on:
         type: string
     secrets:
       NEXUS3_PW:
-        required: true
+        required: true # Required for artifact promotion in Nexus
       ATLASSIAN_AUTH_TOKEN:
-        required: true
+        required: true # Required for Jira API operations
       UNIPORT_APP_PRIVATE_KEY:
-        required: true
+        required: true # Required for pushing tags and branches to protected repos
       ROCKETCHAT_WEBHOOK_URL:
-        required: true
+        required: true # Required for sending team notifications
 
 jobs:
   setup:
@@ -82,24 +96,24 @@ jobs:
       MINOR: ${{ steps.parse.outputs.minor }}
       PATCH: ${{ steps.parse.outputs.patch }}
     steps:
-      - name: Validate version format
+      - name: Validate Version Format (Semver)
         uses: uniport/workflows/.github/actions/validate-version@main
         with:
           version: ${{ inputs.version }}
 
-      - name: Check if target branch exists
+      - name: Verify Target Branch Existence
         id: branch_check
         uses: uniport/workflows/.github/actions/ensure-branch@main
         with:
           branch: ${{ inputs.target_branch }}
 
-      - name: Parse version string
+      - name: Deconstruct Version into Metadata Components
         id: parse
         uses: uniport/workflows/.github/actions/parse-version@main
         with:
           version: ${{ inputs.version }}
 
-      - name: Summary
+      - name: Generate Workflow Run Summary
         shell: bash
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
@@ -159,7 +173,7 @@ jobs:
 
   git-patch-branch:
     name: Create patch branch
-    # Ensure this job runs only if the previous job succeeded or was skipped
+    # Logic: Run if requested AND previous mandatory steps (changelog) succeeded or were skipped
     if: ${{ always() && inputs.create_patch_branch && (needs.changelog.result == 'success' || needs.changelog.result == 'skipped') }}
     needs: [setup, changelog]
     uses: uniport/workflows/.github/workflows/git-patch-branch-create.yml@main
@@ -173,7 +187,7 @@ jobs:
 
   bump-version:
     name: Bump version
-    # Ensure this job runs only if the previous jobs succeeded or was skipped (only skip if both previous jobs have failed)
+    # Logic: Run if requested AND all previous git-modifying jobs succeeded or were skipped
     if: ${{ always() && inputs.bump_version && (needs.changelog.result == 'success' || needs.changelog.result == 'skipped') && (needs.git-patch-branch.result == 'success' || needs.git-patch-branch.result == 'skipped') }}
     needs: [setup, git-patch-branch, changelog]
     uses: uniport/workflows/.github/workflows/version-bump.yml@main
@@ -211,7 +225,7 @@ jobs:
 
   announce:
     name: Announce new release
-    # this send an announcement iff no job was skipped
+    # Policy: Only announce if all required release steps completed without failure
     if: ${{ inputs.send_announcement }}
     needs:
       - setup
@@ -224,7 +238,7 @@ jobs:
       - archetype
     runs-on: ubuntu-latest
     steps:
-      - name: Notify uniport team
+      - name: Send Announcement to Rocket.Chat
         uses: uniport/workflows/.github/actions/send-rocket-chat-message@main
         with:
           webhook_url: ${{ secrets.ROCKETCHAT_WEBHOOK_URL }}

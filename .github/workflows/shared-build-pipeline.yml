@@ -1,3 +1,15 @@
+# [Shared] Build Pipeline
+#
+# This is the central orchestration workflow for standard Java microservices.
+# It encapsulates the entire CI/CD lifecycle from compilation to artifact tagging.
+#
+# Domain: CI/CD Orchestration
+# Contract: Expects a Maven-based project structure.
+# Internal Flow:
+#   1. Maven Build & Test -> 2. Optional DEV Deployment -> 3. Optional Archetype Sync -> 4. Artifact Tagging
+#
+# Downstream: Calls shared-maven-build.yml, shared-deploy-dev.yml, shared-update-archetype.yml, shared-nexus-tag-artifacts.yml.
+
 name: '[Shared] Build Pipeline'
 run-name: 'Build & release "${{ inputs.component_name }}" (#${{ github.run_number }}) by ${{ github.actor }} on ${{ github.ref_name }}'
   
@@ -20,7 +32,7 @@ on:
         description: 'Deploy to development environment'
         required: false
         type: boolean
-        default: true
+        default: true # Policy: Deploy to IPS-DEV by default on master/push
       deployment_branch:
         description: 'The branch to use in the uniport-deployment repository'
         type: string
@@ -56,7 +68,7 @@ on:
         description: 'Update the Uniport archetype after a successful build'
         required: false
         type: boolean
-        default: true
+        default: true # Policy: Keep archetype blueprint in sync with latest master changes
 
       # === Timeout ===
       timeout_minutes:
@@ -88,32 +100,29 @@ on:
         default: false
     outputs:
       VERSION:
-        description: "Forwarded artifact version"
-        value: ${{ jobs.maven.outputs.VERSION }}   # <- direct forward
+        description: "Forwarded artifact version from Maven job"
+        value: ${{ jobs.maven.outputs.VERSION }}
     secrets:
       NEXUS3_PW:
-        required: true
+        required: true # Used for Maven deployment and Nexus tagging
       NEXUS_NPM_TOKEN_READ_ONLY:
-        required: true
+        required: true # Used for fetching internal NPM dependencies
       MACDUFF_KEYCHAIN_PASSWORD:
-        required: true
+        required: true # Required for code signing on macOS runners
       UNIPORT_APP_PRIVATE_KEY:
-        required: true
+        required: true # Required for pushing to protected deployment/archetype repos
       NEXUS_NPM_TOKEN_WRITE:
-        required: false
+        required: false # Only required if project publishes NPM artifacts
 
 # Concurrency Strategy:
 # Prevents redundant builds by canceling outdated runs within the same context.
 #
-# Examples (assuming workflow name is "Build Pipeline"):
+# Examples:
 # 1. Normal Push (e.g., to 'master' branch):
-#    - String: "Build Pipeline-refs/heads/master-"
 #    - Result: New pushes to 'master' cancel any currently running 'master' builds.
 #
-# 2. Pull Request (e.g., Dependabot PR from 'dependabot/maven/sms/assertj-3.27.7'):
-#    - String: "Build Pipeline-refs/heads/master-dependabot/maven/sms/assertj-3.27.7"
-#    - Result: Each PR has a unique 'head_ref', allowing multiple PRs to build in parallel 
-#      without canceling each other, even if they all target 'master'.
+# 2. Pull Request (e.g., Dependabot PR):
+#    - Result: Each PR has a unique 'head_ref', allowing multiple PRs to build in parallel.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.head_ref || '' }}
   cancel-in-progress: true

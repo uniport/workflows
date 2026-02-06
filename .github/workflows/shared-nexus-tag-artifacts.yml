@@ -1,48 +1,58 @@
-# Workflow for staging (tagging + associating) artifacts of various types (Docker, Helm, Maven, NPM) in Nexus
+# [Shared] Nexus Tag Artifacts
+#
+# This workflow creates Nexus "Tags" and associates built components with them.
+# Staging tags are used to identify a coherent set of artifacts for promotion to release.
+#
+# Domain: Artifact Management
+# Contract: Requires artifacts to already exist in the staging repositories.
+# Side Effects: Creates metadata tags in the Nexus 3 internal database.
+#
+# Downstream: Calls shared-nexus-tag-create.yml and shared-nexus-tag-associate.yml.
+
 name: '[Shared] Nexus Tag Artifacts'
 
 on:
   workflow_call:
     secrets:
       NEXUS3_PW:
-        required: true
+        required: true # Required for Nexus API authentication
     inputs:
       version:
         description: 'The version to create a tag and associate components for'
         type: string
         required: true
       group_id:
-        description: 'The group ID attribute'
+        description: 'The group ID attribute (e.g. com.inventage.portal)'
         type: string
         required: true
       tag_name:
-        description: 'The tag name to create (defaults to <group_id>-<version> if not provided)'
+        description: 'The tag name to create (defaults to <group_id>_<version>)'
         type: string
         required: false
       tag_maven:
-        description: 'Enable or disable tagging of maven artifacts'
+        description: 'Enable tagging of maven artifacts'
         type: boolean
         required: false
         default: false
       tag_docker:
-        description: 'Enable or disable tagging of Docker artifacts'
+        description: 'Enable tagging of Docker artifacts'
         type: boolean
         required: false
         default: false
       tag_helm:
-        description: 'Enable or disable tagging of Helm artifacts'
+        description: 'Enable tagging of Helm artifacts'
         type: boolean
         required: false
         default: false
       tag_npm:
-        description: 'Enable or disable tagging of NPM artifacts'
+        description: 'Enable tagging of NPM artifacts'
         type: boolean
         required: false
         default: false
   workflow_dispatch:
     inputs:
       version:
-        description: 'The version to create a tag and associate components for'
+        description: 'The version string'
         type: string
         required: true
       group_id:
@@ -50,26 +60,26 @@ on:
         type: string
         required: true
       tag_name:
-        description: 'The tag name to create (defaults to <group_id>-<version> if not provided)'
+        description: 'Manual override for tag name'
         type: string
         required: false
       tag_maven:
-        description: 'Enable or disable tagging of Maven artifacts'
+        description: 'Enable tagging of Maven artifacts'
         type: boolean
         required: false
         default: false
       tag_docker:
-        description: 'Enable or disable tagging of Docker artifacts'
+        description: 'Enable tagging of Docker artifacts'
         type: boolean
         required: false
         default: false
       tag_helm:
-        description: 'Enable or disable tagging of Helm artifacts'
+        description: 'Enable tagging of Helm artifacts'
         type: boolean
         required: false
         default: false
       tag_npm:
-        description: 'Enable or disable tagging of NPM artifacts'
+        description: 'Enable tagging of NPM artifacts'
         type: boolean
         required: false
         default: false
@@ -101,13 +111,13 @@ jobs:
       STAGING_REPO_NPM: ${{ env.STAGING_REPO_NPM }}
       ALL_ARTIFACTS_VERSION: ${{ steps.setup.outputs.ALL_ARTIFACTS_VERSION }}
     steps:
-      - name: Parse version string
+      - name: Parse Version Metadata Components
         id: parse
         uses: uniport/workflows/.github/actions/base/parse-version@main
         with:
           version: ${{ inputs.version }}
 
-      - name: Generate Tag Names
+      - name: Generate Standardized Nexus Tag Names
         id: setup
         run: |
           TAG_NAME=${{ inputs.tag_name }}
@@ -122,6 +132,7 @@ jobs:
           TAG_NAME_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_HELM }}"
           TAG_NAME_NPM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_NPM }}"
 
+          # Calculate the pattern used to find artifacts in Nexus based on build metadata
           VERSION_SUFFIX="${{ steps.parse.outputs.build_date }}-${{ steps.parse.outputs.run_id }}-${{ steps.parse.outputs.commit_sha }}"
           ALL_ARTIFACTS_VERSION="*-${VERSION_SUFFIX}"
           
@@ -141,7 +152,7 @@ jobs:
           ALL_ARTIFACTS_VERSION=$ALL_ARTIFACTS_VERSION
           EOF
 
-      - name: Summary
+      - name: Generate Tag Configuration Summary
         shell: bash
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF  

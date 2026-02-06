@@ -1,3 +1,12 @@
+# [Shared] Changelog Check
+#
+# This workflow verifies that a PR includes modifications to the CHANGELOG.md file.
+# It uses an external action to perform the file-change analysis.
+#
+# Domain: Quality Gate
+# Contract: Expects a CHANGELOG.md file in the project root.
+# Skip Logic: Automatically skipped for Dependabot branches.
+
 name: '[Shared] Changelog Check'
 
 on:
@@ -5,9 +14,9 @@ on:
 
 jobs:
   check:
-    # Can be skipped with the `no changelog` label on a PR
     name: Check Changelog
     runs-on: ubuntu-latest
+    # Policy: Bot PRs (Dependabot) are exempt from changelog requirements
     if: ${{ !startsWith(github.head_ref, 'dependabot/') }}
     steps:
       - uses: tarides/changelog-check-action@v3

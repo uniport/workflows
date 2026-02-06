@@ -1,3 +1,16 @@
+# [Shared] Maven Build
+#
+# This workflow performs the actual compilation, testing, and deployment of Maven artifacts.
+# It supports projects with frontends and manages Docker registry authentication.
+#
+# Domain: Build Execution
+# Contract: Requires a .github/settings.xml for Maven distribution management.
+# Side Effects: 
+#   - Pushes build artifacts to Nexus (Snapshot or Release).
+#   - Publishes test, checkstyle, and spotbugs reports to the GitHub UI.
+#
+# Downstream: Calls internal actions for Java setup, registry login, and report publishing.
+
 name: '[Shared] Maven Build'
 run-name: 'Maven build #${{ github.run_number }} · ${{ github.ref_name }} · triggered by ${{ github.actor }}'
 
@@ -6,7 +19,7 @@ on:
   workflow_call:
     inputs:
       has_frontend:
-        description: 'Whether the module has a frontend'
+        description: 'Whether the module has a frontend (activates LCOV reporting)'
         required: true
         type: boolean
       maven_verbose:
@@ -15,7 +28,7 @@ on:
         default: false
         type: boolean
       needs_npm_access:
-        description: 'Whether the module needs npm access'
+        description: 'Whether the module needs npm access for private registry auth'
         required: true
         type: boolean
       npmrc_path:
@@ -33,16 +46,16 @@ on:
         default: 60
     secrets:
       NEXUS3_PW:
-        required: true
+        required: true # Required for 'mvn deploy'
       NEXUS_NPM_TOKEN_READ_ONLY:
-        required: true
+        required: true # Auth for internal NPM dependencies
       MACDUFF_KEYCHAIN_PASSWORD:
-        required: true
+        required: true # Required to unlock the keychain on macOS runners for signing
       NEXUS_NPM_TOKEN_WRITE:
-        required: false
+        required: false # Required if 'mvn deploy' includes NPM packages
     outputs:
       VERSION:
-        description: 'Built artifact version'
+        description: 'Built artifact version (derived from RC versioning)'
         value: ${{ jobs.maven.outputs.VERSION }}
       GROUP_ID:
         description: 'The maven groupId attribute'
@@ -60,7 +73,7 @@ env:
 jobs:
   maven:
     name: Build & Publish
-    runs-on: macduff
+    runs-on: macduff # Priority: Dedicated Mac runner for performance/keychain access
     timeout-minutes: ${{ inputs.timeout_minutes }}
     env:
       CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
@@ -72,36 +85,36 @@ jobs:
       branch_name_slug: ${{ steps.slug.outputs.branch-name-slug }}
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repository (Full History)
         uses: actions/checkout@v5
         with:
-          # Need to fetch everything, otherwise "spotless-maven-plugin" fails because we reference origin/master branch in the configuration
+          # fetch-depth: 0 is required for spotless-maven-plugin branch comparisons
           fetch-depth: 0
 
-      - name: Setup build variables
+      - name: Setup Build Variables (RC Versioning)
         id: vars
         uses: uniport/workflows/.github/actions/base/setup-maven-build-variables@main
 
-      - name: Derive branch slug
+      - name: Derive Branch Name Slug
         uses: gacts/github-slug@v1
         id: slug
 
-      - name: Disable man-db triggers
+      - name: Disable Background Database Triggers
         uses: uniport/workflows/.github/actions/base/disable-man-db-triggers@main
 
-      - name: Setup Java
+      - name: Setup Java Development Kit
         uses: uniport/workflows/.github/actions/base/setup-java@main
         with:
           architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
           cache-maven: ${{ !contains(runner.name, 'macduff') }}
           java-version: ${{ inputs.java_version }}
 
-      - name: Unlock keychain (macOS runners)
+      - name: Unlock macOS Keychain (for code signing)
         if: ${{ contains(runner.name, 'macduff') }}
         run: |
           security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
 
-      - name: Login to Docker registry
+      - name: Login to Uniport Docker Registry
         uses: docker/login-action@v3
         with:
           registry: uniportcr.artifacts.inventage.com
@@ -109,7 +122,7 @@ jobs:
           password: ${{ env.CI_AUTH_PSW }}
           logout: ${{ !contains(runner.name, 'macduff') }}
 
-      - name: Setup NPM Access (read-only)
+      - name: Configure Read-Only NPM Registry Access
         if: ${{ inputs.needs_npm_access }}
         uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@main
         with:
@@ -117,7 +130,7 @@ jobs:
           repository: inventage-portal-npm-group
           auth-file: ${{ inputs.npmrc_path }}
 
-      - name: Setup NPM Access (staging)
+      - name: Configure Staging NPM Registry Access
         if: ${{ inputs.needs_npm_access }}
         uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@main
         with:
@@ -125,58 +138,57 @@ jobs:
           repository: inventage-portal-npm-staging
           auth-file: ${{ inputs.npmrc_path }}
 
-      - name: Set Maven project version
+      - name: Update pom.xml Project Version
         uses: uniport/workflows/.github/actions/base/set-maven-project-version@main
         with:
           version: ${{ steps.vars.outputs.RC_VERSION }}
           settings-file: .github/settings.xml
           script: true
 
-      - name: Copy Docker configuration
+      - name: Prepare Docker Configuration for Maven Plugin
         run: |
           cp -Rpf ~/.docker ${{ env.DOCKER_CONFIG_DIRECTORY }}
 
-      - name: Build & deploy with Maven
+      - name: Execute Maven Deploy (Build, Test, and Push)
         run: |
           mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml ${{ inputs.maven_verbose && '-e -X' || '' }} -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 
-      - name: Check permissions for report publishing
+      - name: Evaluate Report Publishing Permissions
         id: permissions
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/check-write-permission@main
 
-      - name: Publish Surefire Report
+      - name: Publish Surefire Test Results
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/publish-surefire-report@main
         with:
           has_permission: ${{ steps.permissions.outputs.has_permission }}
 
-      # Needs to run after the build, otherwise some dependencies are missing for maven
-      - name: Publish Checkstyle Report
+      # Reports need to run after build to ensure dependencies are present in local repo
+      - name: Publish Checkstyle Static Analysis Results
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/publish-checkstyle-report@main
         with:
           has_permission: ${{ steps.permissions.outputs.has_permission }}
 
-      # Needs to run after the build, otherwise some dependencies are missing for maven
-      - name: Publish SpotBugs Report
+      - name: Publish SpotBugs Vulnerability Results
         if: ${{ success() || failure() }}
         uses: uniport/workflows/.github/actions/base/publish-spotbugs-report@main
         with:
           has_permission: ${{ steps.permissions.outputs.has_permission }}
 
-      - name: Ensure no uncommitted code
+      - name: Verify Clean Workspace (No Build Artifacts Leaked)
         uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
 
-      - name: Frontend test coverage
+      - name: Analyze Frontend Test Coverage (LCOV)
         if: ${{ inputs.has_frontend }}
         uses: livewing/lcov-job-summary@v1.2.0
         with:
           lcov: frontend/src/main/web/coverage/lcov.info
 
-      - name: Build summary
+      - name: Generate Build Summary for GitHub UI
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Maven Build
