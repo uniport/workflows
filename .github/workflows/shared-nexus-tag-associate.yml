@@ -59,7 +59,7 @@ jobs:
 
           HTTP_CODE=$(curl -fSs -w "%{http_code}" -o /tmp/response.json -X POST \
             -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
-            '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository="${{ inputs.repo_id }}"&version=${{ inputs.version }}')
+            '${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository=${{ inputs.repo_id }}&version=${{ inputs.version }}')
 
           if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✓ Successfully associated components with tag"
