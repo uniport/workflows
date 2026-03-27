@@ -132,7 +132,9 @@ jobs:
           TAG_NAME_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_HELM }}"
           TAG_NAME_NPM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_NPM }}"
 
-          # Calculate the pattern used to find artifacts in Nexus based on build metadata
+          # Calculate the version pattern used to find Maven artifacts in Nexus based on build metadata.
+          # The leading wildcard is intentional — associate workflow detects it and uses q= instead of version=,
+          # which handles multi-module builds where modules share the same build suffix but have different version prefixes.
           VERSION_SUFFIX="${{ steps.parse.outputs.build_date }}-${{ steps.parse.outputs.run_id }}-${{ steps.parse.outputs.commit_sha }}"
           ALL_ARTIFACTS_VERSION="*-${VERSION_SUFFIX}"
           
