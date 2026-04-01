@@ -68,7 +68,7 @@ jobs:
         run: sleep 10
 
       - name: Checkout deployment repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: uniport/uniport-deployment
           token: ${{ steps.app-token.outputs.token }}
