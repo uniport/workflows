@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           # Need to fetch everything, otherwise "spotless-maven-plugin" fails because we reference origin/master branch in the configuration
           fetch-depth: 0
