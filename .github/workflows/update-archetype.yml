@@ -50,7 +50,7 @@ jobs:
 
       # Generate a token for the Uniport GitHub App
       - name: Generate GitHub App Token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3
         id: app-token
         with:
           app-id: ${{ vars.UNIPORT_APP_ID }}
