@@ -159,7 +159,7 @@ jobs:
 
       - name: Frontend test coverage
         if: ${{ inputs.has_frontend }}
-        uses: livewing/lcov-job-summary@v1.2.0
+        uses: livewing/lcov-job-summary@v1.3.0
         with:
           lcov: frontend/src/main/web/coverage/lcov.info
 
