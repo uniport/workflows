@@ -194,7 +194,7 @@ jobs:
 
       - name: Analyze Frontend Test Coverage (LCOV)
         if: ${{ inputs.has_frontend }}
-        uses: livewing/lcov-job-summary@v1.2.0
+        uses: livewing/lcov-job-summary@v1.3.0
         with:
           lcov: frontend/src/main/web/coverage/lcov.info
 
