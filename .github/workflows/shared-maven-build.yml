@@ -113,6 +113,7 @@ jobs:
         if: ${{ contains(runner.name, 'macduff') }}
         run: |
           security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
+          security list-keychains
 
       - name: Login to Uniport Docker Registry
         uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
