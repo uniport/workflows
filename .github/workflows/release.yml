@@ -235,11 +235,12 @@ jobs:
 
   announce:
     name: Announce new release
-    # Policy: Only announce if all required release steps completed without failure.
+    # Policy: Only announce if the workflow was not cancelled and all required release
+    # steps completed without failure.
     # `always()` is required because several needed jobs (promote, git-tag, jira-release,
     # archetype) are conditionally skipped on a normal release; without it this job would
     # itself be skipped whenever any upstream job is skipped.
-    if: ${{ always() && inputs.send_announcement && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    if: ${{ always() && !cancelled() && inputs.send_announcement && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     needs:
       - setup
       - promote
