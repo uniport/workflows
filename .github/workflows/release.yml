@@ -115,24 +115,34 @@ jobs:
 
       - name: Generate Workflow Run Summary
         shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+          SEM_VER: ${{ steps.parse.outputs.sem_ver }}
+          BUILD_DATE: ${{ steps.parse.outputs.build_date }}
+          RUN_ID: ${{ steps.parse.outputs.run_id }}
+          COMMIT_SHA: ${{ steps.parse.outputs.commit_sha }}
+          MAJOR: ${{ steps.parse.outputs.major }}
+          MINOR: ${{ steps.parse.outputs.minor }}
+          PATCH: ${{ steps.parse.outputs.patch }}
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           ### Inputs
-          - **version**: \`${{ inputs.version }}\`
-          - **target_branch**: \`${{ inputs.target_branch }}\`
+          - **version**: \`$VERSION\`
+          - **target_branch**: \`$TARGET_BRANCH\`
 
           ## Parse Version
           ### Outputs
-          - **SEM_VER**: \`${{ steps.parse.outputs.SEM_VER }}\`
-          - **BUILD_DATE**: \`${{ steps.parse.outputs.BUILD_DATE }}\`
-          - **RUN_ID**: \`${{ steps.parse.outputs.RUN_ID }}\`
-          - **COMMIT_SHA**: \`${{ steps.parse.outputs.COMMIT_SHA }}\`
+          - **SEM_VER**: \`$SEM_VER\`
+          - **BUILD_DATE**: \`$BUILD_DATE\`
+          - **RUN_ID**: \`$RUN_ID\`
+          - **COMMIT_SHA**: \`$COMMIT_SHA\`
 
           ## Parse SemVer
           ### Outputs
-          - **MAJOR**: \`${{ steps.parse.outputs.MAJOR }}\`
-          - **MINOR**: \`${{ steps.parse.outputs.MINOR }}\`
-          - **PATCH**: \`${{ steps.parse.outputs.PATCH }}\`
+          - **MAJOR**: \`$MAJOR\`
+          - **MINOR**: \`$MINOR\`
+          - **PATCH**: \`$PATCH\`
           EOF
 
   promote:
@@ -225,8 +235,11 @@ jobs:
 
   announce:
     name: Announce new release
-    # Policy: Only announce if all required release steps completed without failure
-    if: ${{ inputs.send_announcement }}
+    # Policy: Only announce if all required release steps completed without failure.
+    # `always()` is required because several needed jobs (promote, git-tag, jira-release,
+    # archetype) are conditionally skipped on a normal release; without it this job would
+    # itself be skipped whenever any upstream job is skipped.
+    if: ${{ always() && inputs.send_announcement && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     needs:
       - setup
       - promote

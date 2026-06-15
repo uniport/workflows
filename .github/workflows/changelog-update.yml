@@ -45,9 +45,11 @@ jobs:
           ref: ${{ inputs.branch_name }}
 
       - name: Configure Git user
+        env:
+          ACTOR: ${{ github.actor }}
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "$ACTOR"
+          git config user.email "$ACTOR@users.noreply.github.com"
 
       - name: Update Changelog
         uses: uniport/workflows/.github/actions/update-changelog@main
@@ -62,5 +64,7 @@ jobs:
               --message "Update changelog with new version and prepare next unreleased version"
 
       - name: Push tag
+        env:
+          BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
-          git push origin ${{ inputs.branch_name }}
+          git push origin "$BRANCH_NAME"

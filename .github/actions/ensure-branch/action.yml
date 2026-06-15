@@ -17,23 +17,29 @@ runs:
 
     - name: Check if branch exists
       id: branch_check
+      env:
+        BRANCH: ${{ inputs.branch }}
       run: |
-        if [[ -n $(git ls-remote --heads origin ${{ inputs.branch }}) ]]; then
+        if [[ -n $(git ls-remote --heads origin "$BRANCH") ]]; then
             echo "exists=true" >> $GITHUB_OUTPUT
         else
-            echo "exists=false" >> $GITHUB_OUTPUT          
+            echo "exists=false" >> $GITHUB_OUTPUT
         fi
       shell: bash
 
     - name: Branch exists
       if: steps.branch_check.outputs.exists == 'true'
       shell: bash
+      env:
+        BRANCH: ${{ inputs.branch }}
       run: |
-        echo "Branch '${{ inputs.branch }}' exists!"
+        echo "Branch '$BRANCH' exists!"
 
     - name: Branch does NOT exists
       if: steps.branch_check.outputs.exists == 'false'
       shell: bash
+      env:
+        BRANCH: ${{ inputs.branch }}
       run: |
-        echo "Branch '${{ inputs.branch }}' does NOT exist. Aborting..."
+        echo "Branch '$BRANCH' does NOT exist. Aborting..."
         exit 1

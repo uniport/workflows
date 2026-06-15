@@ -27,12 +27,19 @@ runs:
     # https://help.sonatype.com/en/staging.html
     - name: Move docker images
       shell: bash
+      env:
+        NEXUS3_URL: ${{ inputs.nexus3_url }}
+        NEXUS_USER: ${{ inputs.nexus3_user }}
+        NEXUS_PW: ${{ inputs.nexus3_password }}
+        DOCKER_STAGING_REGISTRY: ${{ inputs.source_registry }}
+        DOCKER_RELEASE_REGISTRY: ${{ inputs.target_registry }}
+        TAG: ${{ inputs.tag }}
       run: |
         docker run --rm -t \
-          -v ${{ github.action_path }}:/tmp \
-          -e NEXUS3_URL="${{ inputs.nexus3_url }}" \
-          -e NEXUS_USER="${{ inputs.nexus3_user }}" \
-          -e NEXUS_PW="${{ inputs.nexus3_password }}" \
-          -e DOCKER_STAGING_REGISTRY="${{ inputs.source_registry }}" \
-          -e DOCKER_RELEASE_REGISTRY="${{ inputs.target_registry }}" \
-          peschee/zx:2.0.0 /tmp/release-nexus-tag.mjs "${{ inputs.tag }}" --quiet
+          -v "$GITHUB_ACTION_PATH:/tmp" \
+          -e NEXUS3_URL="$NEXUS3_URL" \
+          -e NEXUS_USER="$NEXUS_USER" \
+          -e NEXUS_PW="$NEXUS_PW" \
+          -e DOCKER_STAGING_REGISTRY="$DOCKER_STAGING_REGISTRY" \
+          -e DOCKER_RELEASE_REGISTRY="$DOCKER_RELEASE_REGISTRY" \
+          peschee/zx:2.0.0 /tmp/release-nexus-tag.mjs "$TAG" --quiet

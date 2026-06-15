@@ -46,10 +46,16 @@ jobs:
 
       - name: Summary
         shell: bash
+        env:
+          SOURCE_REGISTRY: ${{ inputs.source_registry }}
+          SOURCE_IMAGE: ${{ inputs.source_image }}
+          DESTINATION_REGISTRY: ${{ inputs.destination_registry }}
+          DESTINATION_IMAGE: ${{ inputs.destination_image }}
+          VERSION: ${{ inputs.version }}
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
           ## Setup
           ### Outputs
-          - **SOURCE_IMAGE**: \`${{ inputs.source_registry }}/${{ inputs.source_image }}:${{ inputs.version }}\`
-          - **DESTINATION_IMAGE**: \`${{ inputs.destination_registry }}/${{ inputs.destination_image }}:${{ inputs.version }}\`
+          - **SOURCE_IMAGE**: \`$SOURCE_REGISTRY/$SOURCE_IMAGE:$VERSION\`
+          - **DESTINATION_IMAGE**: \`$DESTINATION_REGISTRY/$DESTINATION_IMAGE:$VERSION\`
           EOF

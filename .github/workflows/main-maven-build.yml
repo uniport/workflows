@@ -88,8 +88,10 @@ jobs:
 
       - name: Unlock keychain (macOS runners)
         if: ${{ contains(runner.name, 'macduff') }}
+        env:
+          MACDUFF_KEYCHAIN_PASSWORD: ${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}
         run: |
-          security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
+          security unlock-keychain -p "$MACDUFF_KEYCHAIN_PASSWORD"
 
       - name: Setup Helm repositories
         uses: uniport/workflows/.github/actions/base/add-helm-repositories@main
@@ -164,11 +166,14 @@ jobs:
           lcov: frontend/src/main/web/coverage/lcov.info
 
       - name: Build summary
+        env:
+          RC_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+          GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Maven Build
           This workflow ran successfully on **$(date)**.
           ### Outputs
-          - **VERSION**: \`${{ steps.vars.outputs.RC_VERSION }}\`
-          - **GROUP_ID**: \`${{ steps.vars.outputs.GROUP_ID }}\`
+          - **VERSION**: \`${RC_VERSION}\`
+          - **GROUP_ID**: \`${GROUP_ID}\`
           EOF

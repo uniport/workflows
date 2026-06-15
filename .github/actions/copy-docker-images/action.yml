@@ -20,9 +20,14 @@ runs:
   steps:
     - name: Copy multi-arch docker image
       shell: bash
+      env:
+        SOURCE_CREDENTIALS: ${{ inputs.source_credentials }}
+        DESTINATION_CREDENTIALS: ${{ inputs.destination_credentials }}
+        SOURCE_IMAGE: ${{ inputs.source_image }}
+        DESTINATION_IMAGE: ${{ inputs.destination_image }}
       run: |
         docker run --rm quay.io/skopeo/stable:v1 copy \
           --all \
-          --src-creds ${{ inputs.source_credentials }} \
-          --dest-creds ${{ inputs.destination_credentials }} \
-          docker://${{ inputs.source_image }} docker://${{ inputs.destination_image }}
+          --src-creds "$SOURCE_CREDENTIALS" \
+          --dest-creds "$DESTINATION_CREDENTIALS" \
+          "docker://$SOURCE_IMAGE" "docker://$DESTINATION_IMAGE"

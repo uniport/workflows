@@ -35,10 +35,12 @@ runs:
     - name: Parse version
       id: version
       shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
       run: |
-        IFS=- read SEM_VER BUILD_DATE RUN_ID COMMIT_SHA <<< "${{ inputs.version }}"
+        IFS=- read SEM_VER BUILD_DATE RUN_ID COMMIT_SHA <<< "$VERSION"
 
-        cat >> $GITHUB_OUTPUT <<EOF  
+        cat >> $GITHUB_OUTPUT <<EOF
         SEM_VER=$SEM_VER
         BUILD_DATE=$BUILD_DATE
         RUN_ID=$RUN_ID
@@ -48,8 +50,10 @@ runs:
     - name: Parse SemVer
       id: semver
       shell: bash
+      env:
+        SEM_VER: ${{ steps.version.outputs.SEM_VER }}
       run: |
-        IFS=. read MAJOR MINOR PATCH <<< "${{ steps.version.outputs.SEM_VER }}"
+        IFS=. read MAJOR MINOR PATCH <<< "$SEM_VER"
 
         cat >> $GITHUB_OUTPUT <<EOF  
         MAJOR=$MAJOR

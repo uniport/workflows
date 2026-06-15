@@ -109,18 +109,25 @@ jobs:
 
       - name: Set Tag Name
         id: tag
+        env:
+          TAG_NAME_INPUT: ${{ inputs.tag_name }}
+          GROUP_ID: ${{ inputs.group_id }}
+          VERSION: ${{ inputs.version }}
+          BUILD_DATE: ${{ steps.parse.outputs.build_date }}
+          RUN_ID: ${{ steps.parse.outputs.run_id }}
+          COMMIT_SHA: ${{ steps.parse.outputs.commit_sha }}
         run: |
-          TAG_NAME=${{ inputs.tag_name }}
+          TAG_NAME="$TAG_NAME_INPUT"
           if [ -z "$TAG_NAME" ]; then
-            TAG_NAME="${{ inputs.group_id }}_${{ inputs.version }}"
+            TAG_NAME="${GROUP_ID}_${VERSION}"
           fi
 
-          TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}" # Calculate all tag names
-          TAG_NAME_DOCKER="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_DOCKER }}"
-          TAG_NAME_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_HELM }}"
-          TAG_NAME_NPM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_NPM }}"
+          TAG_NAME_MAVEN="${TAG_NAME}${TAG_NAME_SUFFIX_MAVEN}" # Calculate all tag names
+          TAG_NAME_DOCKER="${TAG_NAME}${TAG_NAME_SUFFIX_DOCKER}"
+          TAG_NAME_HELM="${TAG_NAME}${TAG_NAME_SUFFIX_HELM}"
+          TAG_NAME_NPM="${TAG_NAME}${TAG_NAME_SUFFIX_NPM}"
 
-          VERSION_SUFFIX="${{ steps.parse.outputs.build_date }}-${{ steps.parse.outputs.run_id }}-${{ steps.parse.outputs.commit_sha }}"
+          VERSION_SUFFIX="${BUILD_DATE}-${RUN_ID}-${COMMIT_SHA}"
           ALL_ARTIFACTS_VERSION="*-${VERSION_SUFFIX}"
 
           cat >> $GITHUB_OUTPUT <<EOF
@@ -129,29 +136,36 @@ jobs:
           TAG_NAME_DOCKER=$TAG_NAME_DOCKER
           TAG_NAME_HELM=$TAG_NAME_HELM
           TAG_NAME_NPM=$TAG_NAME_NPM
-          STAGING_REPO_MAVEN=${{ env.STAGING_REPO_MAVEN }}
-          STAGING_REPO_DOCKER=${{ env.STAGING_REPO_DOCKER }}
-          STAGING_REPO_HELM=${{ env.STAGING_REPO_HELM }}
-          STAGING_REPO_NPM=${{ env.STAGING_REPO_NPM }}
+          STAGING_REPO_MAVEN=${STAGING_REPO_MAVEN}
+          STAGING_REPO_DOCKER=${STAGING_REPO_DOCKER}
+          STAGING_REPO_HELM=${STAGING_REPO_HELM}
+          STAGING_REPO_NPM=${STAGING_REPO_NPM}
           ALL_ARTIFACTS_VERSION=$ALL_ARTIFACTS_VERSION
           EOF
 
       - name: Summary
         shell: bash
+        env:
+          TAG_NAME: ${{ steps.tag.outputs.TAG_NAME }}
+          TAG_NAME_MAVEN: ${{ steps.tag.outputs.TAG_NAME_MAVEN }}
+          TAG_NAME_DOCKER: ${{ steps.tag.outputs.TAG_NAME_DOCKER }}
+          TAG_NAME_HELM: ${{ steps.tag.outputs.TAG_NAME_HELM }}
+          TAG_NAME_NPM: ${{ steps.tag.outputs.TAG_NAME_NPM }}
+          ALL_ARTIFACTS_VERSION: ${{ steps.tag.outputs.ALL_ARTIFACTS_VERSION }}
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Setup Tag Name Details
           ### Outputs
-          - **TAG_NAME**: \`${{ steps.tag.outputs.TAG_NAME }}\`
-          - **TAG_NAME_MAVEN**: \`${{ steps.tag.outputs.TAG_NAME_MAVEN }}\`
-          - **TAG_NAME_DOCKER**: \`${{ steps.tag.outputs.TAG_NAME_DOCKER }}\`
-          - **TAG_NAME_HELM**: \`${{ steps.tag.outputs.TAG_NAME_HELM }}\`
-          - **TAG_NAME_NPM**: \`${{ steps.tag.outputs.TAG_NAME_NPM }}\`
-          - **STAGING_REPO_MAVEN**: \`${{ env.STAGING_REPO_MAVEN }}\`
-          - **STAGING_REPO_DOCKER**: \`${{ env.STAGING_REPO_DOCKER }}\`
-          - **STAGING_REPO_HELM**: \`${{ env.STAGING_REPO_HELM }}\`
-          - **STAGING_REPO_NPM**: \`${{ env.STAGING_REPO_NPM }}\`
-          - **ALL_ARTIFACTS_VERSION**: \`${{ steps.tag.outputs.ALL_ARTIFACTS_VERSION }}\`
+          - **TAG_NAME**: \`${TAG_NAME}\`
+          - **TAG_NAME_MAVEN**: \`${TAG_NAME_MAVEN}\`
+          - **TAG_NAME_DOCKER**: \`${TAG_NAME_DOCKER}\`
+          - **TAG_NAME_HELM**: \`${TAG_NAME_HELM}\`
+          - **TAG_NAME_NPM**: \`${TAG_NAME_NPM}\`
+          - **STAGING_REPO_MAVEN**: \`${STAGING_REPO_MAVEN}\`
+          - **STAGING_REPO_DOCKER**: \`${STAGING_REPO_DOCKER}\`
+          - **STAGING_REPO_HELM**: \`${STAGING_REPO_HELM}\`
+          - **STAGING_REPO_NPM**: \`${STAGING_REPO_NPM}\`
+          - **ALL_ARTIFACTS_VERSION**: \`${ALL_ARTIFACTS_VERSION}\`
           EOF
 
   tag_mvn:

@@ -75,13 +75,19 @@ jobs:
           path: archetype-repo
 
       - name: Configure Git User Identity
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
         run: |
           cd archetype-repo
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Register Version and Push to Archetype Repo
+        env:
+          COMMAND: ${{ inputs.command }}
+          COMPONENT_NAME: ${{ inputs.component_name }}
+          VERSION: ${{ inputs.version }}
         run: |
           cd archetype-repo
-          ./registerVersion.sh ${{ inputs.command }} "${{ inputs.component_name }}" ${{ inputs.version }}
+          ./registerVersion.sh "$COMMAND" "$COMPONENT_NAME" "$VERSION"
           git push origin master

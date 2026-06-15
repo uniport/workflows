@@ -111,8 +111,10 @@ jobs:
 
       - name: Unlock macOS Keychain (for code signing)
         if: ${{ contains(runner.name, 'macduff') }}
+        env:
+          MACDUFF_KEYCHAIN_PASSWORD: ${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}
         run: |
-          security unlock-keychain -p "${{ secrets.MACDUFF_KEYCHAIN_PASSWORD }}"
+          security unlock-keychain -p "$MACDUFF_KEYCHAIN_PASSWORD"
           security list-keychains
 
       - name: Login to Uniport Docker Registry
@@ -200,11 +202,14 @@ jobs:
           lcov: frontend/src/main/web/coverage/lcov.info
 
       - name: Generate Build Summary for GitHub UI
+        env:
+          RC_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
+          GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
         run: |
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Maven Build
           | Output | Value |
           |--------|-------|
-          | VERSION | \`${{ steps.vars.outputs.RC_VERSION }}\` |
-          | GROUP_ID | \`${{ steps.vars.outputs.GROUP_ID }}\` |
+          | VERSION | \`$RC_VERSION\` |
+          | GROUP_ID | \`$GROUP_ID\` |
           EOF

@@ -17,5 +17,9 @@ runs:
     # No need to install Node as it is available on all GitHub runners…
     - name: Send Rocket.Chat message
       shell: bash
+      env:
+        WEBHOOK_URL: ${{ inputs.webhook_url }}
+        CHANNEL: ${{ inputs.channel }}
+        MESSAGE: ${{ inputs.message }}
       run: |
-        node ${{ github.action_path }}/send-rocketchat-message.mjs ${{ inputs.webhook_url }} ${{ inputs.channel }} "${{ inputs.message }}"
+        node "$GITHUB_ACTION_PATH/send-rocketchat-message.mjs" "$WEBHOOK_URL" "$CHANNEL" "$MESSAGE"

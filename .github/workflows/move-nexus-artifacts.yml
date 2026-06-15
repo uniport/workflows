@@ -73,11 +73,13 @@ jobs:
           TAG_NAME_SUFFIX_DOCKER_HELM: ${{ vars.TAG_NAME_SUFFIX_DOCKER }}
           TAG_NAME_SUFFIX_MAVEN: ${{ vars.TAG_NAME_SUFFIX_MAVEN }}
           TAG_NAME_SUFFIX_NPM: ${{ vars.TAG_NAME_SUFFIX_NPM }}
+          GROUP_ID: ${{ steps.properties.outputs.GROUP_ID }}
+          VERSION: ${{ inputs.version }}
         shell: bash
         run: |
           set -u
 
-          TAG_NAME="${{ steps.properties.outputs.GROUP_ID }}_${{ inputs.version }}"
+          TAG_NAME="${GROUP_ID}_${VERSION}"
 
           TAG_NAME_DOCKER_HELM="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_DOCKER_HELM }}"
           TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}"
@@ -91,18 +93,26 @@ jobs:
 
       - name: Summary
         shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+          MOVE_MAVEN: ${{ inputs.move_maven }}
+          MOVE_DOCKER_HELM: ${{ inputs.move_docker_helm }}
+          MOVE_NPM: ${{ inputs.move_npm }}
+          TAG_NAME_DOCKER_HELM: ${{ steps.variables.outputs.TAG_NAME_DOCKER_HELM }}
+          TAG_NAME_MAVEN: ${{ steps.variables.outputs.TAG_NAME_MAVEN }}
+          TAG_NAME_NPM: ${{ steps.variables.outputs.TAG_NAME_NPM }}
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Setup
           ### Inputs
-          - **version**: \`${{ inputs.version }}\`
-          - **move_maven**: \`${{ inputs.move_maven }}\`
-          - **move_docker_helm**: \`${{ inputs.move_docker_helm }}\`
-          - **move_npm**: \`${{ inputs.move_npm }}\`
+          - **version**: \`${VERSION}\`
+          - **move_maven**: \`${MOVE_MAVEN}\`
+          - **move_docker_helm**: \`${MOVE_DOCKER_HELM}\`
+          - **move_npm**: \`${MOVE_NPM}\`
           ### Outputs
-          - **TAG_NAME_DOCKER_HELM**: \`${{ steps.variables.outputs.TAG_NAME_DOCKER_HELM }}\`
-          - **TAG_NAME_MAVEN**: \`${{ steps.variables.outputs.TAG_NAME_MAVEN }}\`
-          - **TAG_NAME_NPM**: \`${{ steps.variables.outputs.TAG_NAME_NPM }}\`
+          - **TAG_NAME_DOCKER_HELM**: \`${TAG_NAME_DOCKER_HELM}\`
+          - **TAG_NAME_MAVEN**: \`${TAG_NAME_MAVEN}\`
+          - **TAG_NAME_NPM**: \`${TAG_NAME_NPM}\`
           EOF
 
   move_mvn:
