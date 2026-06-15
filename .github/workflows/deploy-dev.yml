@@ -62,7 +62,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: |
             uniport-deployment
-            
+
       # Add this to wait for token propagation
       - name: Wait for Token Propagation
         run: sleep 10

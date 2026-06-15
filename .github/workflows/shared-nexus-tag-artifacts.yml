@@ -124,7 +124,7 @@ jobs:
           if [ -z "$TAG_NAME" ]; then
             TAG_NAME="${{ inputs.group_id }}_${{ inputs.version }}"
           fi
-          
+
           echo "Base tag name: $TAG_NAME"
 
           TAG_NAME_MAVEN="${TAG_NAME}${{ env.TAG_NAME_SUFFIX_MAVEN }}" # Calculate all tag names
@@ -137,9 +137,9 @@ jobs:
           # which handles multi-module builds where modules share the same build suffix but have different version prefixes.
           VERSION_SUFFIX="${{ steps.parse.outputs.build_date }}-${{ steps.parse.outputs.run_id }}-${{ steps.parse.outputs.commit_sha }}"
           ALL_ARTIFACTS_VERSION="*-${VERSION_SUFFIX}"
-          
+
           echo "Maven version pattern: $ALL_ARTIFACTS_VERSION"
-          
+
           # Export outputs
           cat >> $GITHUB_OUTPUT <<EOF
           TAG_NAME=$TAG_NAME

@@ -38,7 +38,7 @@ jobs:
             echo "Error: Tag name is required"
             exit 1
           fi
-          
+
           # Check for invalid characters in tag name
            if echo "${{ inputs.name }}" | grep -qE '[^a-zA-Z0-9._-]'; then
              echo "Warning: Tag name contains special characters that may cause issues"
@@ -48,13 +48,13 @@ jobs:
       - name: Create Nexus Tag
         run: |
           echo "Creating tag: ${{ inputs.name }}"
-          
+
           HTTP_CODE=$(curl -fSs -w "%{http_code}" -o /tmp/response.json -X POST \
             --url '${{ env.NEXUS3_URL }}/service/rest/v1/tags' \
             -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
             --header 'content-type: application/json' \
             --data '{"name":"${{ inputs.name }}"}')
-          
+
           if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✓ Successfully created tag"
             cat /tmp/response.json 2>/dev/null || true

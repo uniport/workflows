@@ -62,7 +62,6 @@ on:
       NEXUS_NPM_TOKEN_WRITE:
         required: false
 
-
 # Prevent running builds for the same branch in parallel
 # New workflows will cancel existing workflows
 concurrency:

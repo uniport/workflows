@@ -5,7 +5,7 @@
 #
 # Domain: Build Execution
 # Contract: Requires a .github/settings.xml for Maven distribution management.
-# Side Effects: 
+# Side Effects:
 #   - Pushes build artifacts to Nexus (Snapshot or Release).
 #   - Publishes test, checkstyle, and spotbugs reports to the GitHub UI.
 #
@@ -68,7 +68,7 @@ on:
         value: ${{ jobs.maven.outputs.branch_name_slug }}
 
 env:
-  DOCKER_CONFIG_DIRECTORY: "${{ github.workspace }}/.docker"
+  DOCKER_CONFIG_DIRECTORY: '${{ github.workspace }}/.docker'
 
 jobs:
   maven:
@@ -78,7 +78,7 @@ jobs:
     env:
       CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
       CI_AUTH_PSW: ${{ secrets.NEXUS3_PW }}
-      HELM_REGISTRY_CONFIG: "~/.docker/config.json"
+      HELM_REGISTRY_CONFIG: '~/.docker/config.json'
     outputs:
       VERSION: ${{ steps.vars.outputs.RC_VERSION }}
       GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}

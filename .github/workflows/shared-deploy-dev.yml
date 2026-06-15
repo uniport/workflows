@@ -69,7 +69,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: |
             uniport-deployment
-            
+
       - name: Wait for App Token Propagation
         run: sleep 10
 

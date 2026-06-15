@@ -12,7 +12,6 @@
 
 name: '[Shared] Build Pipeline'
 run-name: 'Build & release "${{ inputs.component_name }}" (#${{ github.run_number }}) by ${{ github.actor }} on ${{ github.ref_name }}'
-  
 
 on:
   workflow_call:
@@ -37,7 +36,6 @@ on:
         description: 'The branch to use in the uniport-deployment repository'
         type: string
         default: 'main'
-
 
       # === Frontend ===
       has_frontend:
@@ -100,7 +98,7 @@ on:
         default: false
     outputs:
       VERSION:
-        description: "Forwarded artifact version from Maven job"
+        description: 'Forwarded artifact version from Maven job'
         value: ${{ jobs.maven.outputs.VERSION }}
     secrets:
       NEXUS3_PW:

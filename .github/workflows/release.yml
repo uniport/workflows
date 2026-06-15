@@ -5,7 +5,7 @@
 #
 # Domain: Production Release
 # Contract: Expects a Maven project with semver compliant versions and a CHANGELOG.md.
-# Side Effects: 
+# Side Effects:
 #   - Creates git tags and patch branches.
 #   - Pushes version updates to master/main.
 #   - Modifies internal IPS-Deployment and Archetype repositories.
