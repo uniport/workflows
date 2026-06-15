@@ -4,7 +4,7 @@ inputs:
   node-version:
     description: 'Node.js version'
     required: true
-    default: '22'
+    default: '24'
   without-dependencies:
     description: 'Whether to skip installing npm dependencies'
     required: false
