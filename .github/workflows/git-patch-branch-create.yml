@@ -72,7 +72,7 @@ jobs:
           git switch "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}" || git switch --create "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}"
 
       - name: Push patch branch
-        if: ${{ inputs.patch }} != "0"
+        if: ${{ inputs.patch != '0' }}
         shell: bash
         run: |
           git push origin "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}"
