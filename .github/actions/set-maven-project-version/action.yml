@@ -18,8 +18,11 @@ runs:
     - name: Set version (script)
       shell: bash
       if: ${{ inputs.script == 'true' }}
+      env:
+        VERSION: ${{ inputs.version }}
+        SETTINGS_FILE_INPUT: ${{ inputs.settings-file }}
       run: |
-        SETTINGS_FILE=$(echo "${{ inputs.settings-file }}" | tr -d '[:space:]')
+        SETTINGS_FILE=$(echo "$SETTINGS_FILE_INPUT" | tr -d '[:space:]')
 
         if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
           echo "Error: Settings file '$SETTINGS_FILE' does not exist."
@@ -27,16 +30,19 @@ runs:
         fi
 
         if [[ -n "$SETTINGS_FILE" ]]; then
-          MAVEN_SETTINGS_PATH="$SETTINGS_FILE" ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+          MAVEN_SETTINGS_PATH="$SETTINGS_FILE" ${GITHUB_ACTION_PATH}/set-mvn-version.sh "$VERSION"
         else
-          ${GITHUB_ACTION_PATH}/set-mvn-version.sh ${{ inputs.version }}
+          ${GITHUB_ACTION_PATH}/set-mvn-version.sh "$VERSION"
         fi
 
     - name: Set version (mvn plugin, custom settings)
       shell: bash
       if: ${{ inputs.script != 'true' }}
+      env:
+        VERSION: ${{ inputs.version }}
+        SETTINGS_FILE_INPUT: ${{ inputs.settings-file }}
       run: |
-        SETTINGS_FILE=$(echo "${{ inputs.settings-file }}" | tr -d '[:space:]')
+        SETTINGS_FILE=$(echo "$SETTINGS_FILE_INPUT" | tr -d '[:space:]')
 
         if [[ -n "$SETTINGS_FILE" && ! -f "$SETTINGS_FILE" ]]; then
           echo "Error: Settings file '$SETTINGS_FILE' does not exist."
@@ -44,7 +50,7 @@ runs:
         fi
 
         if [[ -n "$SETTINGS_FILE" ]]; then
-          mvn -B -V --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
+          mvn -B -V --no-transfer-progress versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false --settings "$SETTINGS_FILE"
         else
-          mvn -B -V --no-transfer-progress versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+          mvn -B -V --no-transfer-progress versions:set -DnewVersion="$VERSION" -DgenerateBackupPoms=false
         fi

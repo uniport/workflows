@@ -15,8 +15,10 @@ runs:
   steps:
     - name: Run SpotBugs
       shell: bash
+      env:
+        SETTINGS_FILE: ${{ inputs.settings_file }}
       run: |
-        mvn -B -V --no-transfer-progress --settings ${{ inputs.settings_file }} initialize spotbugs:check
+        mvn -B -V --no-transfer-progress --settings "$SETTINGS_FILE" initialize spotbugs:check
 
     - name: Check for SpotBugs results
       id: spotbugs_results

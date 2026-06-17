@@ -37,14 +37,21 @@ jobs:
     steps:
       # https://help.sonatype.com/en/tagging.html
       - name: Get tag
+        env:
+          NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+          TAG: ${{ inputs.tag }}
         run: |
           curl --fail --silent --show-error \
-            --user "${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}" \
-            ${{ env.NEXUS3_URL }}/service/rest/v1/tags/${{ inputs.tag }}
+            --user "$NEXUS3_USER:$NEXUS3_PW" \
+            "$NEXUS3_URL/service/rest/v1/tags/$TAG"
 
       # https://help.sonatype.com/en/staging.html
       - name: Move artifacts
+        env:
+          NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+          TARGET_REPOSITORY: ${{ inputs.target_repository }}
+          TAG: ${{ inputs.tag }}
         run: |
           curl --fail --silent --show-error -X POST \
-            --user "${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}" \
-            ${{ env.NEXUS3_URL }}/service/rest/v1/staging/move/${{ inputs.target_repository }}?tag=\"${{ inputs.tag }}\"
+            --user "$NEXUS3_USER:$NEXUS3_PW" \
+            "$NEXUS3_URL/service/rest/v1/staging/move/$TARGET_REPOSITORY?tag=\"$TAG\""

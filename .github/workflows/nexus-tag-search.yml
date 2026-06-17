@@ -21,7 +21,10 @@ jobs:
     steps:
       # https://help.sonatype.com/en/tagging.html
       - name: Search Components with Nexus Tag
+        env:
+          NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+          TAG: ${{ inputs.tag }}
         run: |
           curl -fSs -X GET \
-          -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
-          '${{ env.NEXUS3_URL }}/service/rest/v1/search?tag="${{ inputs.tag }}"'
+          --user "$NEXUS3_USER:$NEXUS3_PW" \
+          "$NEXUS3_URL/service/rest/v1/search?tag=\"$TAG\""

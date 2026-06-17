@@ -47,23 +47,31 @@ jobs:
           fetch-tags: true
 
       - name: Configure Git user
+        env:
+          ACTOR: ${{ github.actor }}
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "$ACTOR"
+          git config user.email "$ACTOR@users.noreply.github.com"
 
       - name: Create Git Tag
         shell: bash
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+          TAG_MESSAGE: ${{ inputs.tag_message }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
         run: |
           echo "Running on branch: $(git rev-parse --abbrev-ref HEAD)"
 
           git tag \
-            --annotate "${{ inputs.tag_name }}" \
-            --message "${{ inputs.tag_message }}" \
-            "${{inputs.commit_sha }}"
+            --annotate "$TAG_NAME" \
+            --message "$TAG_MESSAGE" \
+            "$COMMIT_SHA"
 
       # There's an issue in GitHub where changes cannot be pushed from an action if the tag points to a commit where
       # the contents of .github/workflows/ are not identical to the contents of .github/workflows/ on the latest commit of any branch!
       # @see https://github.com/orgs/community/discussions/151442
       - name: Push tag
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
         run: |
-          git push origin ${{ inputs.tag_name }}
+          git push origin "$TAG_NAME"

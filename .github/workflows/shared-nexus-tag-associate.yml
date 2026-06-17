@@ -52,13 +52,18 @@ jobs:
     steps:
       # https://help.sonatype.com/en/tagging.html
       - name: Associate Components with Nexus Tag
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+          REPO_ID: ${{ inputs.repo_id }}
+          INPUT_VERSION: ${{ inputs.version }}
+          NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
         run: |
-          echo "Associating components with tag: ${{ inputs.tag_name }}"
-          echo "Associating components in repository '${{ inputs.repo_id }}' with version pattern '${{ inputs.version }}'"
+          echo "Associating components with tag: $TAG_NAME"
+          echo "Associating components in repository '$REPO_ID' with version pattern '$INPUT_VERSION'"
 
           # If the version starts with a wildcard (e.g. "*-suffix"), strip it and use keyword search (q=)
           # directly on the associate endpoint — Nexus 3.88+ dropped wildcard support on version= but q= works.
-          VERSION="${{ inputs.version }}"
+          VERSION="$INPUT_VERSION"
           if [[ "$VERSION" == \** ]]; then
             SEARCH_PARAM="q"
             SEARCH_VALUE="${VERSION#\*-}"
@@ -69,8 +74,8 @@ jobs:
           echo "Using search parameter: ${SEARCH_PARAM}=${SEARCH_VALUE}"
 
           HTTP_CODE=$(curl -fSs -w "%{http_code}" -o /tmp/response.json -X POST \
-            -u '${{ env.NEXUS3_USER }}:${{ secrets.NEXUS3_PW }}' \
-            "${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/${{ inputs.tag_name }}?repository=${{ inputs.repo_id }}&${SEARCH_PARAM}=${SEARCH_VALUE}")
+            --user "${{ env.NEXUS3_USER }}:$NEXUS3_PW" \
+            "${{ env.NEXUS3_URL }}/service/rest/v1/tags/associate/$TAG_NAME?repository=$REPO_ID&${SEARCH_PARAM}=${SEARCH_VALUE}")
 
           if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✓ Successfully associated all components with tag"

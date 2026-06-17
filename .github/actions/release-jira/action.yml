@@ -21,6 +21,9 @@ runs:
     - name: Update Changelog
       env:
         JIRA_BASIC_AUTH_TOKEN: '${{ inputs.jira_basic_auth_token }}'
+        COMPONENT_NAME: ${{ inputs.component_name }}
+        SEMVER: ${{ inputs.semver }}
+        VERSION: ${{ inputs.version }}
       shell: bash
       run: |
-        ${{ github.action_path }}/jiraRelease.sh "${{ inputs.component_name }}" "${{ inputs.semver }}" "${{ inputs.version }}"
+        "$GITHUB_ACTION_PATH/jiraRelease.sh" "$COMPONENT_NAME" "$SEMVER" "$VERSION"

@@ -49,8 +49,11 @@ jobs:
       - name: Setup
         id: setup
         shell: bash
+        env:
+          MAJOR: ${{ inputs.major }}
+          MINOR: ${{ inputs.minor }}
         run: |
-          PATCH_BRANCH_NAME="${{ inputs.major }}.${{ inputs.minor }}.x"
+          PATCH_BRANCH_NAME="$MAJOR.$MINOR.x"
 
           cat >> $GITHUB_OUTPUT <<EOF
           PATCH_BRANCH_NAME=$PATCH_BRANCH_NAME
@@ -63,29 +66,40 @@ jobs:
           ref: ${{ inputs.branch_name }}
 
       - name: Configure Git user
+        env:
+          ACTOR: ${{ github.actor }}
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "$ACTOR"
+          git config user.email "$ACTOR@users.noreply.github.com"
 
       - name: Switch to/Create patch branch
+        env:
+          PATCH_BRANCH_NAME: ${{ steps.setup.outputs.PATCH_BRANCH_NAME }}
         run: |
-          git switch "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}" || git switch --create "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}"
+          git switch "$PATCH_BRANCH_NAME" || git switch --create "$PATCH_BRANCH_NAME"
 
       - name: Push patch branch
         if: ${{ inputs.patch != '0' }}
         shell: bash
+        env:
+          PATCH_BRANCH_NAME: ${{ steps.setup.outputs.PATCH_BRANCH_NAME }}
         run: |
-          git push origin "${{ steps.setup.outputs.PATCH_BRANCH_NAME }}"
+          git push origin "$PATCH_BRANCH_NAME"
 
       - name: Summary
         shell: bash
+        env:
+          MAJOR: ${{ inputs.major }}
+          MINOR: ${{ inputs.minor }}
+          PATCH: ${{ inputs.patch }}
+          PATCH_BRANCH_NAME: ${{ steps.setup.outputs.PATCH_BRANCH_NAME }}
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Setup
           ### Inputs
-          - **major**: \`${{ inputs.major }}\`          
-          - **minor**: \`${{ inputs.minor }}\`          
-          - **patch**: \`${{ inputs.patch }}\`          
+          - **major**: \`$MAJOR\`
+          - **minor**: \`$MINOR\`
+          - **patch**: \`$PATCH\`
           ### Outputs
-          - **PATCH_BRANCH_NAME**: \`${{ steps.setup.outputs.PATCH_BRANCH_NAME }}\`
+          - **PATCH_BRANCH_NAME**: \`$PATCH_BRANCH_NAME\`
           EOF

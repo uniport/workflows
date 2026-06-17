@@ -76,19 +76,28 @@ jobs:
           path: deployment-repo
 
       - name: Configure Git user
+        env:
+          ACTOR: ${{ github.actor }}
         run: |
           cd deployment-repo
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "$ACTOR"
+          git config user.email "$ACTOR@users.noreply.github.com"
 
       - name: Configure deployment
+        env:
+          COMPONENT_NAME: ${{ inputs.component_name }}
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ inputs.branch }}
         run: |
           cd deployment-repo
-          ./updateVersion.sh "${{ inputs.component_name }}" "${{ inputs.version }}"
-          git push origin ${{ inputs.branch }}
+          ./updateVersion.sh "$COMPONENT_NAME" "$VERSION"
+          git push origin "$BRANCH"
 
       - name: Build summary
+        env:
+          VERSION: ${{ inputs.version }}
+          BRANCH: ${{ inputs.branch }}
         run: |
           echo "## Deploy DEV Details" >> $GITHUB_STEP_SUMMARY
-          echo "- **version**: \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **branch**: \`${{ inputs.branch }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **version**: \`$VERSION\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **branch**: \`$BRANCH\`" >> $GITHUB_STEP_SUMMARY

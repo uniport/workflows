@@ -30,16 +30,21 @@ runs:
     - name: Add Helm repositories
       shell: bash
       if: ${{ inputs.repositories != '[]' }}
+      env:
+        HELM_USER: ${{ inputs.username }}
+        HELM_PASS: ${{ inputs.password }}
+        FORCE_UPDATE: ${{ inputs.force-update }}
+        REPOSITORIES: ${{ inputs.repositories }}
       run: |
-        echo '${{ inputs.repositories }}' | jq -c '.[]' | while IFS= read -r repo_json; do
+        echo "$REPOSITORIES" | jq -c '.[]' | while IFS= read -r repo_json; do
           repo_name=$(echo "$repo_json" | jq -r .name)
           repo_url=$(echo "$repo_json" | jq -r .url)
 
-          # Build the helm command with conditional --force-update flag
-          helm_cmd="helm repo add \"$repo_name\" \"$repo_url\" --username \"${{ inputs.username }}\" --password \"${{ inputs.password }}\""
-          if [[ "${{ inputs.force-update }}" == "true" ]]; then
-            helm_cmd="$helm_cmd --force-update"
+          # Build the helm arguments with conditional --force-update flag
+          helm_args=(repo add "$repo_name" "$repo_url" --username "$HELM_USER" --password "$HELM_PASS")
+          if [[ "$FORCE_UPDATE" == "true" ]]; then
+            helm_args+=(--force-update)
           fi
 
-          eval "$helm_cmd"
+          helm "${helm_args[@]}"
         done

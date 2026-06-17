@@ -52,19 +52,23 @@ jobs:
       - name: Setup
         id: setup
         shell: bash
+        env:
+          MAJOR: ${{ inputs.major }}
+          MINOR: ${{ inputs.minor }}
+          PATCH: ${{ inputs.patch }}
         run: |
           set -u
 
-          NEXT_MINOR="${{ inputs.minor }}"
-          NEXT_PATCH="${{ inputs.patch }}"
+          NEXT_MINOR="$MINOR"
+          NEXT_PATCH="$PATCH"
 
-          if [[ "${{ inputs.patch }}" -eq 0 ]]; then
-            NEXT_MINOR="$(( ${{ inputs.minor }} + 1 ))"
+          if [[ "$PATCH" -eq 0 ]]; then
+            NEXT_MINOR="$(( MINOR + 1 ))"
           else
-            NEXT_PATCH="$(( ${{ inputs.patch }} + 1 ))"
+            NEXT_PATCH="$(( PATCH + 1 ))"
           fi
 
-          NEXT_VERSION="${{ inputs.major }}.${NEXT_MINOR}.${NEXT_PATCH}"
+          NEXT_VERSION="$MAJOR.${NEXT_MINOR}.${NEXT_PATCH}"
 
           cat >> $GITHUB_OUTPUT <<EOF  
           NEXT_VERSION=$NEXT_VERSION
@@ -77,9 +81,11 @@ jobs:
           ref: ${{ inputs.branch_name }}
 
       - name: Configure Git user
+        env:
+          ACTOR: ${{ github.actor }}
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "$ACTOR"
+          git config user.email "$ACTOR@users.noreply.github.com"
 
       - name: Bump version
         uses: uniport/workflows/.github/actions/set-version@main
@@ -87,6 +93,8 @@ jobs:
           version: ${{ steps.setup.outputs.NEXT_VERSION }}-${{ env.SNAPSHOT_SUFFIX }}
 
       - name: Commit
+        env:
+          NEXT_VERSION: ${{ steps.setup.outputs.NEXT_VERSION }}
         run: |
           git add $(find . -name 'pom.xml')
           git add $(find . -path '**/web/package.json') || echo "No package.json found"
@@ -95,22 +103,30 @@ jobs:
           # only commit if there are changes
           git diff-index --quiet HEAD || git commit \
             --no-verify \
-            --message "Set version to ${{ steps.setup.outputs.NEXT_VERSION }}"
+            --message "Set version to $NEXT_VERSION"
 
       - name: Push
+        env:
+          BRANCH_NAME: ${{ inputs.branch_name }}
         run: |
-          git push origin ${{ inputs.branch_name }}
+          git push origin "$BRANCH_NAME"
 
       - name: Summary
         shell: bash
+        env:
+          MAJOR: ${{ inputs.major }}
+          MINOR: ${{ inputs.minor }}
+          PATCH: ${{ inputs.patch }}
+          BRANCH_NAME: ${{ inputs.branch_name }}
+          NEXT_VERSION: ${{ steps.setup.outputs.NEXT_VERSION }}
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Setup
           ### Inputs
-          - **major**: \`${{ inputs.major }}\`          
-          - **minor**: \`${{ inputs.minor }}\`          
-          - **patch**: \`${{ inputs.patch }}\`          
-          - **branch_name**: \`${{ inputs.branch_name }}\`          
+          - **major**: \`$MAJOR\`
+          - **minor**: \`$MINOR\`
+          - **patch**: \`$PATCH\`
+          - **branch_name**: \`$BRANCH_NAME\`
           ### Outputs
-          - **NEXT_VERSION**: \`${{ steps.setup.outputs.NEXT_VERSION }}\`
+          - **NEXT_VERSION**: \`$NEXT_VERSION\`
           EOF

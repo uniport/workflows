@@ -15,8 +15,10 @@ runs:
   steps:
     - name: Run Checkstyle
       shell: bash
+      env:
+        SETTINGS_FILE: ${{ inputs.settings_file }}
       run: |
-        mvn -B -V --no-transfer-progress --settings ${{ inputs.settings_file }} initialize checkstyle:check
+        mvn -B -V --no-transfer-progress --settings "$SETTINGS_FILE" initialize checkstyle:check
 
     - name: Check for Checkstyle results
       id: checkstyle_results

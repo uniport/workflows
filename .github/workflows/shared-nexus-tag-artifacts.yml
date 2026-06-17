@@ -119,10 +119,17 @@ jobs:
 
       - name: Generate Standardized Nexus Tag Names
         id: setup
+        env:
+          INPUT_TAG_NAME: ${{ inputs.tag_name }}
+          GROUP_ID: ${{ inputs.group_id }}
+          VERSION: ${{ inputs.version }}
+          PARSE_BUILD_DATE: ${{ steps.parse.outputs.build_date }}
+          PARSE_RUN_ID: ${{ steps.parse.outputs.run_id }}
+          PARSE_COMMIT_SHA: ${{ steps.parse.outputs.commit_sha }}
         run: |
-          TAG_NAME=${{ inputs.tag_name }}
+          TAG_NAME="$INPUT_TAG_NAME"
           if [ -z "$TAG_NAME" ]; then
-            TAG_NAME="${{ inputs.group_id }}_${{ inputs.version }}"
+            TAG_NAME="${GROUP_ID}_${VERSION}"
           fi
 
           echo "Base tag name: $TAG_NAME"
@@ -135,7 +142,7 @@ jobs:
           # Calculate the version pattern used to find Maven artifacts in Nexus based on build metadata.
           # The leading wildcard is intentional — associate workflow detects it and uses q= instead of version=,
           # which handles multi-module builds where modules share the same build suffix but have different version prefixes.
-          VERSION_SUFFIX="${{ steps.parse.outputs.build_date }}-${{ steps.parse.outputs.run_id }}-${{ steps.parse.outputs.commit_sha }}"
+          VERSION_SUFFIX="${PARSE_BUILD_DATE}-${PARSE_RUN_ID}-${PARSE_COMMIT_SHA}"
           ALL_ARTIFACTS_VERSION="*-${VERSION_SUFFIX}"
 
           echo "Maven version pattern: $ALL_ARTIFACTS_VERSION"
@@ -156,20 +163,27 @@ jobs:
 
       - name: Generate Tag Configuration Summary
         shell: bash
+        env:
+          OUT_TAG_NAME: ${{ steps.setup.outputs.TAG_NAME }}
+          OUT_TAG_NAME_MAVEN: ${{ steps.setup.outputs.TAG_NAME_MAVEN }}
+          OUT_TAG_NAME_DOCKER: ${{ steps.setup.outputs.TAG_NAME_DOCKER }}
+          OUT_TAG_NAME_HELM: ${{ steps.setup.outputs.TAG_NAME_HELM }}
+          OUT_TAG_NAME_NPM: ${{ steps.setup.outputs.TAG_NAME_NPM }}
+          OUT_ALL_ARTIFACTS_VERSION: ${{ steps.setup.outputs.ALL_ARTIFACTS_VERSION }}
         run: |
-          cat >> $GITHUB_STEP_SUMMARY <<EOF  
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
           ## Setup Tag Name Details
           ### Outputs
-          - **TAG_NAME**: \`${{ steps.setup.outputs.TAG_NAME }}\`
-          - **TAG_NAME_MAVEN**: \`${{ steps.setup.outputs.TAG_NAME_MAVEN }}\`
-          - **TAG_NAME_DOCKER**: \`${{ steps.setup.outputs.TAG_NAME_DOCKER }}\`
-          - **TAG_NAME_HELM**: \`${{ steps.setup.outputs.TAG_NAME_HELM }}\`
-          - **TAG_NAME_NPM**: \`${{ steps.setup.outputs.TAG_NAME_NPM }}\`
+          - **TAG_NAME**: \`$OUT_TAG_NAME\`
+          - **TAG_NAME_MAVEN**: \`$OUT_TAG_NAME_MAVEN\`
+          - **TAG_NAME_DOCKER**: \`$OUT_TAG_NAME_DOCKER\`
+          - **TAG_NAME_HELM**: \`$OUT_TAG_NAME_HELM\`
+          - **TAG_NAME_NPM**: \`$OUT_TAG_NAME_NPM\`
           - **STAGING_REPO_MAVEN**: \`${{ env.STAGING_REPO_MAVEN }}\`
           - **STAGING_REPO_DOCKER**: \`${{ env.STAGING_REPO_DOCKER }}\`
           - **STAGING_REPO_HELM**: \`${{ env.STAGING_REPO_HELM }}\`
           - **STAGING_REPO_NPM**: \`${{ env.STAGING_REPO_NPM }}\`
-          - **ALL_ARTIFACTS_VERSION**: \`${{ steps.setup.outputs.ALL_ARTIFACTS_VERSION }}\`
+          - **ALL_ARTIFACTS_VERSION**: \`$OUT_ALL_ARTIFACTS_VERSION\`
           EOF
 
   # Create tags for enabled artifact types
