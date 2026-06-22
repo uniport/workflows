@@ -90,6 +90,10 @@ jobs:
         with:
           # fetch-depth: 0 is required for spotless-maven-plugin branch comparisons
           fetch-depth: 0
+          # Under pull_request_target the default ref is the base branch, which
+          # would build base instead of the PR's proposed changes. Pin to the PR
+          # head when available; fall back to github.sha for push/dispatch.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Build Variables (RC Versioning)
         id: vars
