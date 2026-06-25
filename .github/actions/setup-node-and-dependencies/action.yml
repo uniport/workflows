@@ -19,7 +19,7 @@ runs:
         node-version: ${{ inputs.node-version }}
 
     # @see https://www.voorhoede.nl/en/blog/super-fast-npm-install-on-github-actions/
-    - uses: actions/cache@v5
+    - uses: actions/cache@v6
       id: cache-node-modules
       if: ${{ inputs.without-dependencies == '0' }}
       with:
