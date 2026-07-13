@@ -14,7 +14,12 @@ runs:
   using: composite
   steps:
     - name: Run SpotBugs
+      id: spotbugs_analysis
       shell: bash
+      # Deferred failure (see last step): the report must still be published when the check
+      # finds bugs, and the action must not fail when an earlier build failure (e.g.
+      # unresolvable dependencies) prevents the analysis from running at all.
+      continue-on-error: true
       run: |
         mvn -B -V --no-transfer-progress --settings ${{ inputs.settings_file }} initialize spotbugs:check
 
@@ -36,3 +41,13 @@ runs:
 
     - name: SpotBugs Summary
       uses: uniport/workflows/.github/actions/base/spotbugs-summary@main
+
+    - name: Evaluate SpotBugs outcome
+      if: ${{ steps.spotbugs_analysis.outcome == 'failure' }}
+      shell: bash
+      run: |
+        if [ "${{ steps.spotbugs_results.outputs.found }}" = "true" ]; then
+          echo "::error::SpotBugs check failed, see the published report and the job summary"
+          exit 1
+        fi
+        echo "::notice::SpotBugs analysis could not run and produced no results, most likely because a previous build step failed; skipping report"
