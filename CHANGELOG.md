@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added workflows and actions for running the release pipeline with github actions ([PORTAL-1673](https://inventage-all.atlassian.net/browse/PORTAL-1673))
+- Added `shared-dependabot-automerge.yml`: approves and rebase-merges Dependabot PRs after the calling repository's build passed, based on a per-group merge policy (`merge_policy` input; majors, test dependencies and ungrouped/internal dependencies always stay human-reviewed). Merges as the Uniport GitHub App so the regular pipelines on the default branch still trigger; any human commit on a Dependabot branch disarms auto-merge ([GH-51](https://github.com/uniport/workflows/pull/51))
 
 ### Fixed
 
