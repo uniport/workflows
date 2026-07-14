@@ -1,0 +1,113 @@
+# Shared Dependabot Auto-Merge Workflow
+#
+# Approves and merges Dependabot pull requests that
+#   1. were verified by the calling workflow (callers MUST gate this job on
+#      their build job via 'needs'),
+#   2. belong to a dependency group from the repository's dependabot.yml that
+#      is allowlisted in the 'merge_policy' input, and
+#   3. bump at most the update type configured for that group (majors always
+#      require a human; for grouped PRs the update type is the highest bump
+#      contained in the group).
+#
+# The default policy reflects historical merge behavior across uniport repos:
+# Quarkus is patch-only (LTS policy; patches were merged 100% of the time),
+# build tooling is safe up to minor (>80% merged), jOOQ minors touch the
+# Quarkiverse extension compatibility so they stay manual, and test
+# dependencies are deliberately absent - history shows they are almost always
+# deferred by a human (often because they must match the Quarkus BOM). For npm,
+# UI runtime dependencies auto-merge patches only (minors can change the UI in
+# ways automated tests miss) while dev tooling auto-merges up to minor since it
+# is fully exercised by build + lint + tests.
+#
+# Technical Details:
+# - Callers must trigger on 'pull_request_target' so this policy always runs
+#   from the default branch and cannot be altered from within the PR itself.
+# - The job is restricted to the 'dependabot[bot]' actor; a human pushing
+#   additional commits to a Dependabot branch changes the actor and disarms it.
+#   The merge is performed immediately (GitHub's 'auto-merge' is deliberately
+#   not armed on the PR), so after a human fix a later green build never merges
+#   the PR behind their back - humans merge such PRs manually. Commenting
+#   '@dependabot rebase' hands the branch back to the bot and re-arms auto-merge.
+# - The merge is performed with a Uniport GitHub App token instead of
+#   GITHUB_TOKEN, so the resulting push still triggers the regular pipelines
+#   on the default branch. The App needs 'Contents: write' and
+#   'Pull requests: write' on the repository.
+# - Merge method is rebase to match how Dependabot PRs are merged manually.
+
+name: '# Shared-Dependabot-Automerge'
+
+on:
+  workflow_call:
+    inputs:
+      merge_policy:
+        description: >-
+          Comma-separated <group>:<max-update-type> pairs. Only PRs of an
+          allowlisted dependabot.yml dependency group whose highest bump is at
+          most the configured type (patch|minor) are auto-merged.
+        type: string
+        required: false
+        default: 'quarkus:patch,build-tooling:minor,jooq:patch,actions:minor,frontend-runtime-patch:patch,frontend-tooling:minor'
+    secrets:
+      UNIPORT_APP_PRIVATE_KEY:
+        required: true
+
+jobs:
+  automerge:
+    name: Auto-Merge
+    runs-on: macduff
+    if: ${{ github.actor == 'dependabot[bot]' }} # Ensure this only runs for bot-initiated PRs
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Evaluate merge policy
+        id: policy
+        env:
+          MERGE_POLICY: ${{ inputs.merge_policy }}
+          # Ungrouped PRs have an empty dependency-group and are never auto-merged
+          GROUP: ${{ steps.metadata.outputs.dependency-group }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+        run: |
+          eligible=false
+          if [ -n "$GROUP" ]; then
+            IFS=',' read -ra rules <<< "$MERGE_POLICY"
+            for rule in "${rules[@]}"; do
+              group="${rule%%:*}"
+              max_type="${rule##*:}"
+              if [ "$group" != "$GROUP" ]; then
+                continue
+              fi
+              case "$UPDATE_TYPE" in
+                version-update:semver-patch)
+                  eligible=true
+                  ;;
+                version-update:semver-minor)
+                  if [ "$max_type" = "minor" ]; then
+                    eligible=true
+                  fi
+                  ;;
+              esac
+            done
+          fi
+          echo "Group '${GROUP:-<none>}' with update type '$UPDATE_TYPE' -> eligible=$eligible"
+          echo "eligible=$eligible" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate as Uniport GitHub App
+        id: app-token
+        if: ${{ steps.policy.outputs.eligible == 'true' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.UNIPORT_GITHUB_APP_CLIENT_ID }}
+          private-key: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
+
+      - name: Approve and merge
+        if: ${{ steps.app-token.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --rebase "$PR_URL"
