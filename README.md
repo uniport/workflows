@@ -46,6 +46,30 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 - [Tag Nexus Artifacts](./.github/workflows/nexus-tag-search.yml)
 - [Version Bump](./.github/workflows/version-bump.yml)
 
+## SBOM, Attestation & Dependency-Track
+
+The [shared build pipeline](./.github/workflows/shared-build-pipeline.yml) generates a CycloneDX SBOM for every build of the default branch and of `X.Y.x` maintenance branches (configurable via the `sbom_ref_pattern` input, opt out with `generate_sbom: false`):
+
+- **SBOM**: npm frontend sources (production dependencies) plus a syft scan of every Docker image the build pushed, merged into a single `sbom.cyclonedx.json` run artifact.
+- **Attestation**: the SBOM and a SLSA provenance predicate are attached to each image (by digest) with [cosign](https://github.com/sigstore/cosign), signed with the Uniport key pair. The public key is [cosign.pub](./cosign.pub). Verify with:
+
+  ```sh
+  cosign verify-attestation --key cosign.pub --type cyclonedx --insecure-ignore-tlog <image>@<digest>
+  cosign verify-attestation --key cosign.pub --type slsaprovenance --insecure-ignore-tlog <image>@<digest>
+  ```
+
+- **Dependency-Track**: the SBOM is uploaded to [dtrack.inventage.com](https://dtrack.inventage.com) under the project named after the repository, with the semver prefix of the build version as project version. Each build of a release line replaces the BOM, so the Dependency-Track project always reflects the current release candidate; releases need no additional upload. The upload runs on a self-hosted runner because Dependency-Track is only reachable from the internal network.
+
+Required configuration (attestation and upload are skipped with a notice when the secrets are absent):
+
+| Kind     | Name                           | Purpose                                                   |
+| :------- | :----------------------------- | :-------------------------------------------------------- |
+| Secret   | `COSIGN_PRIVATE_KEY`           | Signing key for attestations                              |
+| Secret   | `COSIGN_PASSWORD`              | Password for the signing key                              |
+| Secret   | `DEPENDENCY_TRACK_API_KEY`     | Dependency-Track API key (`BOM_UPLOAD`, project creation) |
+| Variable | `DEPENDENCY_TRACK_PARENT_UUID` | Object Identifier of the Uniport parent project           |
+| Variable | `DEPENDENCY_TRACK_URL`         | Optional, defaults to `https://dtrack.inventage.com`      |
+
 ## Workflows vs. Actions
 
 | Reusable workflows                                                                           | Composite actions                                                                                                            |

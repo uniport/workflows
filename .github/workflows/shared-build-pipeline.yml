@@ -7,8 +7,10 @@
 # Contract: Expects a Maven-based project structure.
 # Internal Flow:
 #   1. Maven Build & Test -> 2. Optional DEV Deployment -> 3. Optional Archetype Sync -> 4. Artifact Tagging
+#   5. SBOM Generation & Attestation (default branch and X.Y.x maintenance branches only)
 #
-# Downstream: Calls shared-maven-build.yml, shared-deploy-dev.yml, shared-update-archetype.yml, shared-nexus-tag-artifacts.yml.
+# Downstream: Calls shared-maven-build.yml, shared-deploy-dev.yml, shared-update-archetype.yml, shared-nexus-tag-artifacts.yml,
+#             and the base actions generate-sbom / upload-sbom-dependency-track.
 
 name: '[Shared] Build Pipeline'
 run-name: 'Build & release "${{ inputs.component_name }}" (#${{ github.run_number }}) by ${{ github.actor }} on ${{ github.ref_name }}'
@@ -75,6 +77,23 @@ on:
         type: number
         default: 60
 
+      # === SBOM & Supply Chain ===
+      generate_sbom:
+        description: 'Generate a CycloneDX SBOM, attest it via cosign, and upload it to Dependency-Track'
+        required: false
+        type: boolean
+        default: true
+      sbom_npm_path:
+        description: 'Path to the npm project included in the SBOM (only used when has_frontend is true)'
+        required: false
+        type: string
+        default: 'frontend/src/main/web'
+      sbom_ref_pattern:
+        description: 'Branch name regex (ERE) allowed to attest and upload to Dependency-Track, in addition to the default branch'
+        required: false
+        type: string
+        default: '^[0-9]+\.[0-9]+\.x$' # X.Y.x maintenance branches
+
       # === Tagging Options ===
       tag_docker:
         description: 'Tag Docker artifacts'
@@ -111,6 +130,12 @@ on:
         required: true # Required for pushing to protected deployment/archetype repos
       NEXUS_NPM_TOKEN_WRITE:
         required: false # Only required if project publishes NPM artifacts
+      COSIGN_PRIVATE_KEY:
+        required: false # SBOM/provenance attestation is skipped with a notice when absent
+      COSIGN_PASSWORD:
+        required: false # Password for COSIGN_PRIVATE_KEY
+      DEPENDENCY_TRACK_API_KEY:
+        required: false # Dependency-Track upload is skipped with a notice when absent
 
 # Concurrency Strategy:
 # Prevents redundant builds by canceling outdated runs within the same context.
@@ -164,6 +189,77 @@ jobs:
       component_name: ${{ inputs.component_name }}
     secrets:
       UNIPORT_APP_PRIVATE_KEY: ${{ secrets.UNIPORT_APP_PRIVATE_KEY }}
+
+  sbom:
+    name: SBOM & Attestation
+    if: ${{ inputs.generate_sbom }}
+    needs: [maven]
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.gate.outputs.should_run }}
+    steps:
+      # Only the default branch and release lines (X.Y.x maintenance branches by
+      # convention, configurable via sbom_ref_pattern) attest and feed Dependency-Track.
+      # Feature branches are skipped — they would otherwise overwrite the Dependency-Track
+      # BOM of the release line they were cut from.
+      - name: Evaluate Branch Gate
+        id: gate
+        shell: bash
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF_PATTERN: ${{ inputs.sbom_ref_pattern }}
+        run: |
+          if [ "$REF_NAME" = "$DEFAULT_BRANCH" ] || echo "$REF_NAME" | grep -Eq "$REF_PATTERN"; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Branch '$REF_NAME' is neither the default branch nor matches '$REF_PATTERN' — skipping SBOM generation."
+          fi
+
+      - name: Checkout Repository
+        if: ${{ steps.gate.outputs.should_run == 'true' }}
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Generate SBOM and Attest
+        if: ${{ steps.gate.outputs.should_run == 'true' }}
+        # TODO(sbom-merge): pin back to @main before merging
+        uses: uniport/workflows/.github/actions/base/generate-sbom@sbom
+        with:
+          version: ${{ needs.maven.outputs.VERSION }}
+          registry: ${{ vars.STAGING_REGISTRY_DOCKER }}
+          nexus-url: ${{ vars.NEXUS3_URL }}
+          nexus-user: ${{ vars.NEXUS3_USER }}
+          nexus-password: ${{ secrets.NEXUS3_PW }}
+          staging-repo-docker: ${{ vars.STAGING_REPO_DOCKER }}
+          npm-path: ${{ inputs.has_frontend && inputs.sbom_npm_path || '' }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+
+  # Separate job: dtrack.inventage.com is only reachable from the internal network,
+  # so the upload must run on a self-hosted runner (the SBOM generation itself runs
+  # on cheaper GitHub-hosted runners).
+  dtrack:
+    name: Dependency-Track Upload
+    if: ${{ needs.sbom.outputs.should_run == 'true' }}
+    needs: [maven, sbom]
+    runs-on: macduff
+    steps:
+      - name: Download SBOM Artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: sbom.cyclonedx.json
+
+      - name: Upload SBOM to Dependency-Track
+        # TODO(sbom-merge): pin back to @main before merging
+        uses: uniport/workflows/.github/actions/base/upload-sbom-dependency-track@sbom
+        with:
+          version: ${{ needs.maven.outputs.VERSION }}
+          api-key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          url: ${{ vars.DEPENDENCY_TRACK_URL || 'https://dtrack.inventage.com' }}
+          parent-uuid: ${{ vars.DEPENDENCY_TRACK_PARENT_UUID }}
+          # Only builds of the default branch mark their DT version as "latest"
+          is-latest: ${{ github.ref_name == github.event.repository.default_branch }}
 
   tag_artifacts:
     name: Tag Artifacts

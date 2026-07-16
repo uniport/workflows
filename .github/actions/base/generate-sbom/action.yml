@@ -1,0 +1,236 @@
+name: Generate SBOM and Attest
+description: >
+  Generates CycloneDX SBOMs for all Docker images produced by a build (discovered via the
+  nexus-list-docker-images action) plus optional npm frontend sources, merges them into a
+  single SBOM, uploads it as the run artifact 'sbom.cyclonedx.json', and attaches it to
+  each image via cosign (SBOM + SLSA provenance attestations).
+
+  The Dependency-Track upload lives in the separate 'upload-sbom-dependency-track' action:
+  it must run on a self-hosted runner because dtrack.inventage.com is only reachable from
+  the internal network, while this action runs fine on GitHub-hosted runners.
+
+  Attestation degrades gracefully: when the cosign secrets are not provided, the step is
+  skipped with a notice instead of failing the build.
+
+  Attestations are signed with the Uniport cosign key pair; the public key is published as
+  cosign.pub in the uniport/workflows repository. Verification example:
+    cosign verify-attestation --key cosign.pub --type cyclonedx --insecure-ignore-tlog <image>@<digest>
+
+inputs:
+  version:
+    description: Full build version (e.g. 1.0.0-202507161230-42-abcdef1) used to discover images
+    required: true
+  registry:
+    description: Docker registry host the images were pushed to
+    required: true
+  nexus-url:
+    description: Nexus base URL used for image discovery (e.g. https://nexus3.inventage.com)
+    required: true
+  nexus-user:
+    description: Nexus username (also used for registry access)
+    required: true
+  nexus-password:
+    description: Nexus password (also used for registry access)
+    required: true
+  staging-repo-docker:
+    description: Nexus repository ID of the Docker staging repository to search for images
+    required: true
+  npm-path:
+    description: Path to the npm project directory to include in the SBOM (empty = no npm SBOM)
+    required: false
+    default: ''
+  cosign-private-key:
+    description: Cosign private key for signing attestations (empty = skip attestation)
+    required: false
+    default: ''
+  cosign-password:
+    description: Cosign private key password
+    required: false
+    default: ''
+  attest-provenance:
+    description: Also attach a SLSA provenance attestation to each image
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Discover Docker Images
+      id: discover
+      # TODO(sbom-merge): pin back to @main before merging
+      uses: uniport/workflows/.github/actions/base/nexus-list-docker-images@sbom
+      with:
+        nexus-url: ${{ inputs.nexus-url }}
+        nexus-user: ${{ inputs.nexus-user }}
+        nexus-password: ${{ inputs.nexus-password }}
+        repository: ${{ inputs.staging-repo-docker }}
+        registry: ${{ inputs.registry }}
+        version: ${{ inputs.version }}
+
+    - name: Install syft
+      uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+      id: syft
+
+    - name: Generate npm SBOM
+      if: ${{ inputs.npm-path != '' }}
+      shell: bash
+      env:
+        SYFT: ${{ steps.syft.outputs.cmd }}
+        NPM_PATH: ${{ inputs.npm-path }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        "$SYFT" scan "dir:${NPM_PATH}" \
+          --source-name "${GITHUB_REPOSITORY#*/}-npm" --source-version "$VERSION" \
+          -o cyclonedx-json@1.6=sbom-npm.cyclonedx.json
+
+    - name: Generate image SBOMs
+      if: ${{ steps.discover.outputs.count != '0' }}
+      shell: bash
+      env:
+        SYFT: ${{ steps.syft.outputs.cmd }}
+        SYFT_REGISTRY_AUTH_USERNAME: ${{ inputs.nexus-user }}
+        SYFT_REGISTRY_AUTH_PASSWORD: ${{ inputs.nexus-password }}
+        REGISTRY: ${{ inputs.registry }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        i=0
+        while read -r NAME; do
+          [ -z "$NAME" ] && continue
+          i=$((i + 1))
+          "$SYFT" scan "registry:${REGISTRY}/${NAME}:${VERSION}" -o "cyclonedx-json@1.6=sbom-image-${i}.cyclonedx.json"
+        done < images.txt
+
+    - name: Merge SBOMs
+      shell: bash
+      run: |
+        shopt -s nullglob
+        FILES=()
+        for f in sbom-npm.cyclonedx.json sbom-image-*.cyclonedx.json; do
+          [ -f "$f" ] && FILES+=("$f")
+        done
+
+        if [ "${#FILES[@]}" -eq 0 ]; then
+          echo "::error::No SBOMs were generated — nothing to merge."
+          exit 1
+        fi
+
+        if [ "${#FILES[@]}" -eq 1 ]; then
+          cp "${FILES[0]}" sbom.cyclonedx.json
+          exit 0
+        fi
+
+        case "$(uname -s)" in
+          Darwin) OS=osx ;;
+          *) OS=linux ;;
+        esac
+        case "$(uname -m)" in
+          arm64 | aarch64) ARCH=arm64 ;;
+          *) ARCH=x64 ;;
+        esac
+        curl -fsSL "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.32.0/cyclonedx-${OS}-${ARCH}" \
+          -o /tmp/cyclonedx-cli && chmod +x /tmp/cyclonedx-cli
+        # Invariant globalization: cyclonedx-cli is a .NET binary and would otherwise
+        # require libicu on the runner
+        export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+        /tmp/cyclonedx-cli merge \
+          --input-files "${FILES[@]}" \
+          --output-file sbom.cyclonedx.json \
+          --output-format json \
+          --output-version v1_6
+
+    - name: Upload merged SBOM
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: sbom.cyclonedx.json
+        path: sbom.cyclonedx.json
+        # Artifacts are immutable within a run; without this, "Re-run all jobs" fails
+        # on the duplicate artifact name from the previous attempt
+        overwrite: true
+
+    - name: Notice — attestation skipped
+      if: ${{ inputs.cosign-private-key == '' }}
+      shell: bash
+      run: echo "::notice::COSIGN_PRIVATE_KEY not provided — skipping SBOM/provenance attestation."
+
+    - name: Install cosign
+      if: ${{ inputs.cosign-private-key != '' && steps.discover.outputs.count != '0' }}
+      uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+    - name: Install crane
+      if: ${{ inputs.cosign-private-key != '' && steps.discover.outputs.count != '0' }}
+      uses: imjasonh/setup-crane@6da1ae018866400525525ce74ff892880c099987 # v0.5
+
+    - name: Generate SLSA provenance predicate
+      if: ${{ inputs.cosign-private-key != '' && inputs.attest-provenance == 'true' && steps.discover.outputs.count != '0' }}
+      shell: bash
+      run: |
+        jq -n \
+          --arg builder_id "${GITHUB_SERVER_URL}/${GITHUB_WORKFLOW_REF}" \
+          --arg uri "git+${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}@${GITHUB_REF}" \
+          --arg sha "${GITHUB_SHA}" \
+          --arg entry_point "${GITHUB_WORKFLOW}" \
+          --arg invocation_id "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/attempts/${GITHUB_RUN_ATTEMPT}" \
+          '{
+            builder: { id: $builder_id },
+            buildType: "https://docs.github.com/actions/workflow",
+            invocation: {
+              configSource: {
+                uri: $uri,
+                digest: { sha1: $sha },
+                entryPoint: $entry_point
+              }
+            },
+            metadata: {
+              buildInvocationId: $invocation_id,
+              completeness: { parameters: true, environment: false, materials: false },
+              reproducible: false
+            },
+            materials: [{ uri: $uri, digest: { sha1: $sha } }]
+          }' > provenance.slsa.json
+
+    - name: Attest SBOM and provenance
+      if: ${{ inputs.cosign-private-key != '' && steps.discover.outputs.count != '0' }}
+      shell: bash
+      env:
+        COSIGN_PRIVATE_KEY: ${{ inputs.cosign-private-key }}
+        COSIGN_PASSWORD: ${{ inputs.cosign-password }}
+        NEXUS_USER: ${{ inputs.nexus-user }}
+        NEXUS_PW: ${{ inputs.nexus-password }}
+        REGISTRY: ${{ inputs.registry }}
+        VERSION: ${{ inputs.version }}
+        ATTEST_PROVENANCE: ${{ inputs.attest-provenance }}
+      run: |
+        crane auth login "$REGISTRY" -u "$NEXUS_USER" -p "$NEXUS_PW"
+
+        while read -r NAME; do
+          [ -z "$NAME" ] && continue
+          DIGEST=$(crane digest "${REGISTRY}/${NAME}:${VERSION}")
+          IMAGE="${REGISTRY}/${NAME}@${DIGEST}"
+
+          echo "Attesting SBOM for ${IMAGE}"
+          cosign attest --key env://COSIGN_PRIVATE_KEY \
+            --use-signing-config=false --new-bundle-format=false --tlog-upload=false \
+            --predicate sbom.cyclonedx.json --type cyclonedx "$IMAGE"
+
+          if [ "$ATTEST_PROVENANCE" = "true" ]; then
+            echo "Attesting SLSA provenance for ${IMAGE}"
+            cosign attest --key env://COSIGN_PRIVATE_KEY \
+              --use-signing-config=false --new-bundle-format=false --tlog-upload=false \
+              --predicate provenance.slsa.json --type slsaprovenance "$IMAGE"
+          fi
+        done < images.txt
+
+    - name: Summary
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        HAS_COSIGN: ${{ inputs.cosign-private-key != '' }}
+      run: |
+        {
+          echo "## SBOM"
+          echo "| Item | Value |"
+          echo "|------|-------|"
+          echo "| Images | $(paste -sd ', ' images.txt) |"
+          echo "| Version | \`${VERSION}\` |"
+          echo "| Attested | ${HAS_COSIGN} |"
+        } >> "$GITHUB_STEP_SUMMARY"
