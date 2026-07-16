@@ -1,0 +1,91 @@
+name: List Docker Images in Nexus
+description: >
+  Discovers all Docker container images a build pushed to a Nexus repository by searching
+  for docker-format components with the given version. Non-image OCI artifacts stored in
+  the same repository (e.g. Helm charts pushed via 'helm push oci://') are filtered out
+  by inspecting each component's manifest media type.
+
+  Writes the resulting image names (one per line, without registry prefix) to 'images.txt'
+  in the working directory for consumption by subsequent steps.
+
+inputs:
+  nexus-url:
+    description: Nexus base URL used for the component search (e.g. https://nexus3.inventage.com)
+    required: true
+  nexus-user:
+    description: Nexus username (also used for registry access)
+    required: true
+  nexus-password:
+    description: Nexus password (also used for registry access)
+    required: true
+  repository:
+    description: Nexus repository ID of the Docker repository to search
+    required: true
+  registry:
+    description: Docker registry host used to inspect manifests (e.g. the staging registry)
+    required: true
+  version:
+    description: Component version to search for (e.g. 1.0.0-202507161230-42-abcdef1)
+    required: true
+
+outputs:
+  count:
+    description: Number of container images found
+    value: ${{ steps.discover.outputs.count }}
+
+runs:
+  using: composite
+  steps:
+    - name: Discover Docker images in Nexus
+      id: discover
+      shell: bash
+      env:
+        NEXUS_URL: ${{ inputs.nexus-url }}
+        NEXUS_USER: ${{ inputs.nexus-user }}
+        NEXUS_PW: ${{ inputs.nexus-password }}
+        REPO_ID: ${{ inputs.repository }}
+        REGISTRY: ${{ inputs.registry }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        # Find all docker components pushed by this build (same discovery pattern as the
+        # Nexus tag association).
+        TOKEN=""
+        : > components.txt
+        while :; do
+          URL="${NEXUS_URL}/service/rest/v1/search?repository=${REPO_ID}&format=docker&version=${VERSION}"
+          [ -n "$TOKEN" ] && URL="${URL}&continuationToken=${TOKEN}"
+          RESPONSE=$(curl -fsS -u "${NEXUS_USER}:${NEXUS_PW}" "$URL")
+          echo "$RESPONSE" | jq -r '.items[].name' >> components.txt
+          TOKEN=$(echo "$RESPONSE" | jq -r '.continuationToken // empty')
+          [ -z "$TOKEN" ] && break
+        done
+        sort -u components.txt -o components.txt
+
+        # The Docker repository may also hold non-image OCI artifacts (e.g. Helm charts).
+        # Keep only container images: multi-arch indexes or manifests whose config is a
+        # container-image config.
+        : > images.txt
+        while read -r NAME; do
+          [ -z "$NAME" ] && continue
+          MEDIA_TYPE=$(curl -fsS -u "${NEXUS_USER}:${NEXUS_PW}" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+            "https://${REGISTRY}/v2/${NAME}/manifests/${VERSION}" \
+            | jq -r '.config.mediaType // .mediaType // empty')
+          case "$MEDIA_TYPE" in
+            *image.index* | *manifest.list* | *image.config* | *container.image*)
+              echo "$NAME" >> images.txt
+              ;;
+            *)
+              echo "Skipping non-image artifact ${NAME} (media type: ${MEDIA_TYPE})"
+              ;;
+          esac
+        done < components.txt
+
+        COUNT=$(grep -c . images.txt || true)
+        echo "count=${COUNT}" >> "$GITHUB_OUTPUT"
+        if [ "$COUNT" -eq 0 ]; then
+          echo "::warning::No Docker images found in '${REPO_ID}' for version ${VERSION}."
+        else
+          echo "Discovered images:"
+          cat images.txt
+        fi
