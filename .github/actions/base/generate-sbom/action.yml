@@ -62,8 +62,7 @@ runs:
   steps:
     - name: Discover Docker Images
       id: discover
-      # TODO(sbom-merge): pin back to @main before merging
-      uses: uniport/workflows/.github/actions/base/nexus-list-docker-images@sbom
+      uses: uniport/workflows/.github/actions/base/nexus-list-docker-images@main
       with:
         nexus-url: ${{ inputs.nexus-url }}
         nexus-user: ${{ inputs.nexus-user }}

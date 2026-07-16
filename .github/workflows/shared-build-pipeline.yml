@@ -231,8 +231,7 @@ jobs:
       - name: Generate SBOM and Attest
         id: generate
         if: ${{ steps.gate.outputs.should_run == 'true' }}
-        # TODO(sbom-merge): pin back to @main before merging
-        uses: uniport/workflows/.github/actions/base/generate-sbom@sbom
+        uses: uniport/workflows/.github/actions/base/generate-sbom@main
         with:
           version: ${{ needs.maven.outputs.VERSION }}
           registry: ${{ vars.STAGING_REGISTRY_DOCKER }}
@@ -261,8 +260,7 @@ jobs:
           name: sbom.cyclonedx.json
 
       - name: Upload SBOM to Dependency-Track
-        # TODO(sbom-merge): pin back to @main before merging
-        uses: uniport/workflows/.github/actions/base/upload-sbom-dependency-track@sbom
+        uses: uniport/workflows/.github/actions/base/upload-sbom-dependency-track@main
         with:
           version: ${{ needs.maven.outputs.VERSION }}
           api-key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
