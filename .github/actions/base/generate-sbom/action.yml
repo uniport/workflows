@@ -52,6 +52,11 @@ inputs:
     required: false
     default: 'true'
 
+outputs:
+  generated:
+    description: Whether an SBOM was generated ('false' when the build produced neither Docker images nor an npm SBOM)
+    value: ${{ steps.merge.outputs.generated }}
+
 runs:
   using: composite
   steps:
@@ -101,6 +106,7 @@ runs:
         done < images.txt
 
     - name: Merge SBOMs
+      id: merge
       shell: bash
       run: |
         shopt -s nullglob
@@ -109,10 +115,14 @@ runs:
           [ -f "$f" ] && FILES+=("$f")
         done
 
+        # Repos without Docker images and without a frontend have nothing to describe —
+        # skip gracefully instead of failing the build
         if [ "${#FILES[@]}" -eq 0 ]; then
-          echo "::error::No SBOMs were generated — nothing to merge."
-          exit 1
+          echo "generated=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::The build produced neither Docker images nor an npm SBOM — nothing to generate."
+          exit 0
         fi
+        echo "generated=true" >> "$GITHUB_OUTPUT"
 
         if [ "${#FILES[@]}" -eq 1 ]; then
           cp "${FILES[0]}" sbom.cyclonedx.json
@@ -139,6 +149,7 @@ runs:
           --output-version v1_6
 
     - name: Upload merged SBOM
+      if: ${{ steps.merge.outputs.generated == 'true' }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: sbom.cyclonedx.json
@@ -230,7 +241,7 @@ runs:
           echo "## SBOM"
           echo "| Item | Value |"
           echo "|------|-------|"
-          echo "| Images | $(paste -sd ', ' images.txt) |"
+          echo "| Images | $(paste -sd ', ' images.txt || true) |"
           echo "| Version | \`${VERSION}\` |"
-          echo "| Attested | ${HAS_COSIGN} |"
+          echo "| Attested | $([ -s images.txt ] && echo "${HAS_COSIGN}" || echo 'false (no images)') |"
         } >> "$GITHUB_STEP_SUMMARY"

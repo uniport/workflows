@@ -197,20 +197,27 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.gate.outputs.should_run }}
+      sbom_generated: ${{ steps.generate.outputs.generated }}
     steps:
       # Only the default branch and release lines (X.Y.x maintenance branches by
       # convention, configurable via sbom_ref_pattern) attest and feed Dependency-Track.
       # Feature branches are skipped — they would otherwise overwrite the Dependency-Track
-      # BOM of the release line they were cut from.
+      # BOM of the release line they were cut from. PR builds (e.g. Dependabot via
+      # pull_request_target, where github.ref_name is the BASE branch and would pass the
+      # branch check) are skipped for the same reason.
       - name: Evaluate Branch Gate
         id: gate
         shell: bash
         env:
+          EVENT_NAME: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           REF_PATTERN: ${{ inputs.sbom_ref_pattern }}
         run: |
-          if [ "$REF_NAME" = "$DEFAULT_BRANCH" ] || echo "$REF_NAME" | grep -Eq "$REF_PATTERN"; then
+          if [[ "$EVENT_NAME" == pull_request* ]]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::PR builds do not attest or upload to Dependency-Track — skipping SBOM generation."
+          elif [ "$REF_NAME" = "$DEFAULT_BRANCH" ] || echo "$REF_NAME" | grep -Eq "$REF_PATTERN"; then
             echo "should_run=true" >> "$GITHUB_OUTPUT"
           else
             echo "should_run=false" >> "$GITHUB_OUTPUT"
@@ -222,6 +229,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Generate SBOM and Attest
+        id: generate
         if: ${{ steps.gate.outputs.should_run == 'true' }}
         # TODO(sbom-merge): pin back to @main before merging
         uses: uniport/workflows/.github/actions/base/generate-sbom@sbom
@@ -241,7 +249,9 @@ jobs:
   # on cheaper GitHub-hosted runners).
   dtrack:
     name: Dependency-Track Upload
-    if: ${{ needs.sbom.outputs.should_run == 'true' }}
+    # sbom_generated is false for repos that produce neither Docker images nor have a
+    # frontend — there is nothing to upload then
+    if: ${{ needs.sbom.outputs.should_run == 'true' && needs.sbom.outputs.sbom_generated == 'true' }}
     needs: [maven, sbom]
     runs-on: macduff
     steps:
