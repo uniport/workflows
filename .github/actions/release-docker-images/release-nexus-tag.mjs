@@ -49,7 +49,7 @@ if (components.length < 1) {
   process.exit(1);
 }
 
-components.forEach(async c => {
+for (const c of components) {
   const imageName = `${c.name}:${c.version}`;
   const source = `${DOCKER_STAGING_REGISTRY}/${imageName}`;
   const dest = `${DOCKER_RELEASE_REGISTRY}/${imageName}`;
@@ -58,4 +58,23 @@ components.forEach(async c => {
 
   // @see https://github.com/containers/skopeo
   await $`skopeo copy -a --src-creds ${NEXUS_USER}:${NEXUS_PW} --dest-creds ${NEXUS_USER}:${NEXUS_PW} docker://${source} docker://${dest}`;
-});
+
+  // Cosign stores SBOM/provenance attestations and signatures as sibling tags of the image
+  // (sha256-<digest>.att / .sig). Carry them along so released images stay verifiable after
+  // the staging repository gets cleaned up. Images without attestations are copied as before.
+  const digest = (await $`skopeo inspect --format {{.Digest}} --creds ${NEXUS_USER}:${NEXUS_PW} docker://${source}`).stdout.trim();
+  for (const suffix of ['att', 'sig']) {
+    const attachmentTag = `${digest.replace(':', '-')}.${suffix}`;
+    const attachmentSource = `${DOCKER_STAGING_REGISTRY}/${c.name}:${attachmentTag}`;
+    const attachmentDest = `${DOCKER_RELEASE_REGISTRY}/${c.name}:${attachmentTag}`;
+
+    try {
+      await $`skopeo inspect --raw --creds ${NEXUS_USER}:${NEXUS_PW} docker://${attachmentSource}`;
+    } catch {
+      continue; // image has no attachment of this kind
+    }
+
+    console.info(`Copying ${suffix} attachment ${chalk.bold(attachmentSource)} to ${chalk.bold(attachmentDest)}…`);
+    await $`skopeo copy --src-creds ${NEXUS_USER}:${NEXUS_PW} --dest-creds ${NEXUS_USER}:${NEXUS_PW} docker://${attachmentSource} docker://${attachmentDest}`;
+  }
+}
