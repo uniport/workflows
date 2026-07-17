@@ -164,9 +164,13 @@ jobs:
         run: |
           find ~/.m2/repository -name "maven-metadata-local.xml" -delete 2>/dev/null || true
 
+      # Disabling the Aether tracking file (_remote.repositories) skips the per-artifact
+      # re-verification of which remote a cached artifact came from on the persistent
+      # macduff ~/.m2 caches; all repositories resolve through the same Nexus group mirror
+      # anyway (settings.xml has mirrorOf=*).
       - name: Execute Maven Deploy (Build, Test, and Push)
         run: |
-          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml ${{ inputs.maven_verbose && '-e -X' || '' }} -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
+          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml ${{ inputs.maven_verbose && '-e -X' || '' }} -Daether.enhancedLocalRepository.trackingFilename=_NOT_USED_ -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 

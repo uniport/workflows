@@ -132,9 +132,10 @@ jobs:
         run: |
           cp -Rpf ~/.docker ${{ env.DOCKER_CONFIG_DIRECTORY }}
 
+      # No Aether origin re-verification per artifact (see shared-maven-build.yml)
       - name: Build & deploy with Maven
         run: |
-          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
+          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -Daether.enhancedLocalRepository.trackingFilename=_NOT_USED_ -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 
