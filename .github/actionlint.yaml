@@ -1,0 +1,8 @@
+# actionlint configuration
+# https://github.com/rhysd/actionlint/blob/main/docs/config.md
+#
+# Declare self-hosted runner labels used across these workflows so actionlint
+# does not report them as unknown `runs-on` values.
+self-hosted-runner:
+  labels:
+    - macduff
