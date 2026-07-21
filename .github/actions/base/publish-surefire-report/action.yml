@@ -20,7 +20,7 @@ runs:
         fi
 
     - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action/macos@v2
+      uses: EnricoMi/publish-unit-test-result-action/macos@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2
       if: ${{ steps.test_results.outputs.found == 'true' && inputs.has_permission == 'true' }}
       with:
         files: '**/target/surefire-reports/TEST-*.xml'

@@ -34,7 +34,7 @@ runs:
         fi
 
     - name: Publish SpotBugs Report
-      uses: lcollins/spotbugs-github-action@v3.1.0
+      uses: lcollins/spotbugs-github-action@d733e6cdc8d79b9649a4b3e93e998a019652ffbb # v3.1.0
       if: ${{ steps.spotbugs_results.outputs.found == 'true' && inputs.has_permission == 'true' }}
       with:
         path: '**/spotbugsXml.xml'

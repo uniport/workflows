@@ -100,7 +100,7 @@ jobs:
         uses: uniport/workflows/.github/actions/base/setup-maven-build-variables@main
 
       - name: Derive Branch Name Slug
-        uses: gacts/github-slug@v1
+        uses: gacts/github-slug@83cd3d95888be8777f0d9c810c1266da1c5c3ef1 # v1
         id: slug
 
       - name: Disable Background Database Triggers
@@ -199,7 +199,7 @@ jobs:
 
       - name: Analyze Frontend Test Coverage (LCOV)
         if: ${{ inputs.has_frontend }}
-        uses: livewing/lcov-job-summary@v1.3.0
+        uses: livewing/lcov-job-summary@f61677de6678fb6f860c8d1d35c5b4540b64b1d3 # v1.3.0
         with:
           lcov: frontend/src/main/web/coverage/lcov.info
 
