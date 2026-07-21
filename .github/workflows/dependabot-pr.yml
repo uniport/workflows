@@ -1,0 +1,127 @@
+name: Dependabot PR Checks
+
+# Validates Dependabot pull requests before they are merged.
+#
+# The repository's main CI (main.yml) ignores `dependabot/**` branches, so
+# without this workflow a Dependabot PR receives no checks until after it has
+# been merged to `main`. This runs a small set of secret-free, read-only checks
+# so an action or tooling bump gets some validation up front.
+#
+# Checks:
+#   - Classify the update (ecosystem / semver bump type) via fetch-metadata.
+#   - actionlint over the workflows (shellcheck disabled; Dependabot only bumps
+#     `@version` refs, so shell findings are pre-existing noise, not this PR).
+#   - Fail if the PR adds an external action reference that is not pinned to a
+#     full commit SHA. Local (`./`) and first-party (`uniport/`) refs that track
+#     `@main` by design are exempt.
+#   - For npm updates, install and run the Prettier tooling check.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  metadata:
+    name: Classify update
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    outputs:
+      ecosystem: ${{ steps.meta.outputs.package-ecosystem }}
+      update-type: ${{ steps.meta.outputs.update-type }}
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@08eff52bf64351f401fb50d4972fa95b9f2c2d1b # v2.4.0
+      - name: Write summary
+        shell: bash
+        env:
+          ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          DEP_NAMES: ${{ steps.meta.outputs.dependency-names }}
+        run: |
+          {
+            echo "### Dependabot update"
+            echo ""
+            echo "| Field | Value |"
+            echo "| ----- | ----- |"
+            echo "| Ecosystem | \`${ECOSYSTEM}\` |"
+            echo "| Update type | \`${UPDATE_TYPE}\` |"
+            echo "| Dependencies | \`${DEP_NAMES}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  workflow-checks:
+    name: Workflow lint & pin check
+    needs: metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: actionlint
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+        with:
+          shellcheck: false
+      - name: Require SHA-pinned actions in added lines
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Only inspect real `uses:` step keys this PR ADDS. Anchoring to the
+          # start of the line keeps `uses:` inside scripts, comments or examples
+          # from matching, and pre-existing refs elsewhere never block the update.
+          mapfile -t refs < <(
+            gh pr diff "$PR" --patch \
+              | grep -E '^\+[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]' \
+              | sed -E 's/^\+[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]+//' \
+              | awk '{print $1}' \
+              | sort -u || true
+          )
+          if [ "${#refs[@]}" -eq 0 ]; then
+            echo "This PR adds no action references."
+            exit 0
+          fi
+          violations=()
+          for ref in "${refs[@]}"; do
+            [ -z "$ref" ] && continue
+            # Local and first-party refs intentionally track @main.
+            case "$ref" in
+              ./* | uniport/* | *://*) continue ;;
+            esac
+            if ! printf '%s' "$ref" | grep -qE '@[0-9a-f]{40}$'; then
+              violations+=("$ref")
+            fi
+          done
+          if [ "${#violations[@]}" -gt 0 ]; then
+            echo "::error::Action reference(s) not pinned to a full commit SHA:"
+            printf '  - %s\n' "${violations[@]}"
+            echo ""
+            echo "Pin external actions to a 40-character commit SHA with a version comment, e.g.:"
+            echo "  uses: owner/action@1234567890123456789012345678901234567890 # v4"
+            exit 1
+          fi
+          echo "All action references added by this PR are SHA-pinned."
+
+  npm-checks:
+    name: npm tooling lint
+    needs: metadata
+    if: contains(needs.metadata.outputs.ecosystem, 'npm')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Prettier check
+        run: npm run lint:prettier
