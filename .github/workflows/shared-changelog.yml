@@ -19,6 +19,6 @@ jobs:
     # Policy: Bot PRs (Dependabot) are exempt from changelog requirements
     if: ${{ !startsWith(github.head_ref, 'dependabot/') }}
     steps:
-      - uses: tarides/changelog-check-action@v4
+      - uses: tarides/changelog-check-action@8f47e0becbfa549e4c82a3f562aa6f90d2c2ee8c # v4
         with:
           changelog: CHANGELOG.md
