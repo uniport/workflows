@@ -1,0 +1,133 @@
+# [Shared] SBOM, Attestation & Dependency-Track
+#
+# Reusable workflow that, for a build whose Docker images are already pushed to the Nexus
+# Docker staging repository, generates a merged CycloneDX SBOM (optional npm sources plus a
+# syft scan of every discovered image), attests it together with a SLSA provenance predicate
+# to each image via cosign, and uploads it to Dependency-Track.
+#
+# Extracted from shared-build-pipeline.yml so that pipelines which do NOT use the shared build
+# pipeline (repositories with a bespoke build workflow, e.g. uniport-gateway) can reuse the
+# exact same supply-chain steps by calling this workflow with the build version.
+#
+# Gating (identical to the shared build pipeline): only the default branch and X.Y.x
+# maintenance branches (sbom_ref_pattern) attest and upload. PR and feature-branch builds are
+# skipped so they cannot overwrite the Dependency-Track BOM of their release line. Callers that
+# want to opt out entirely simply do not call this workflow (or guard the call with an `if:`).
+#
+# Attestation and upload degrade gracefully: when the optional cosign / Dependency-Track
+# secrets are absent, the respective steps are skipped with a notice instead of failing.
+#
+# Downstream: base actions generate-sbom / upload-sbom-dependency-track.
+
+name: '[Shared] SBOM & Attestation'
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Full build version (e.g. 1.0.0-202507161230-42-abcdef1); used to discover images and as the Dependency-Track project version'
+        required: true
+        type: string
+      npm_path:
+        description: 'Path to an npm project to include in the SBOM (empty = no npm SBOM)'
+        required: false
+        type: string
+        default: ''
+      sbom_ref_pattern:
+        description: 'Branch name regex (ERE) allowed to attest and upload to Dependency-Track, in addition to the default branch'
+        required: false
+        type: string
+        default: '^[0-9]+\.[0-9]+\.x$' # X.Y.x maintenance branches
+      upload_to_dependency_track:
+        description: 'Upload the SBOM to Dependency-Track. Requires a self-hosted runner on the internal network (dtrack is not publicly reachable); set false for repositories that cannot use one, e.g. public repositories. SBOM generation and attestation still run.'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      NEXUS3_PW:
+        required: true # Nexus access for image discovery, registry pull and attestation push
+      COSIGN_PRIVATE_KEY:
+        required: false # SBOM/provenance attestation is skipped with a notice when absent
+      COSIGN_PASSWORD:
+        required: false # Password for COSIGN_PRIVATE_KEY
+      DEPENDENCY_TRACK_API_KEY:
+        required: false # Dependency-Track upload is skipped with a notice when absent
+
+jobs:
+  sbom:
+    name: SBOM & Attestation
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.gate.outputs.should_run }}
+      sbom_generated: ${{ steps.generate.outputs.generated }}
+    steps:
+      # Only the default branch and release lines (X.Y.x maintenance branches by
+      # convention, configurable via sbom_ref_pattern) attest and feed Dependency-Track.
+      # Feature branches are skipped — they would otherwise overwrite the Dependency-Track
+      # BOM of the release line they were cut from. PR builds (e.g. Dependabot via
+      # pull_request_target, where github.ref_name is the BASE branch and would pass the
+      # branch check) are skipped for the same reason.
+      - name: Evaluate Branch Gate
+        id: gate
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF_PATTERN: ${{ inputs.sbom_ref_pattern }}
+        run: |
+          if [[ "$EVENT_NAME" == pull_request* ]]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::PR builds do not attest or upload to Dependency-Track — skipping SBOM generation."
+          elif [ "$REF_NAME" = "$DEFAULT_BRANCH" ] || echo "$REF_NAME" | grep -Eq "$REF_PATTERN"; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Branch '$REF_NAME' is neither the default branch nor matches '$REF_PATTERN' — skipping SBOM generation."
+          fi
+
+      - name: Checkout Repository
+        if: ${{ steps.gate.outputs.should_run == 'true' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Generate SBOM and Attest
+        id: generate
+        if: ${{ steps.gate.outputs.should_run == 'true' }}
+        uses: uniport/workflows/.github/actions/base/generate-sbom@main
+        with:
+          version: ${{ inputs.version }}
+          registry: ${{ vars.STAGING_REGISTRY_DOCKER }}
+          nexus-url: ${{ vars.NEXUS3_URL }}
+          nexus-user: ${{ vars.NEXUS3_USER }}
+          nexus-password: ${{ secrets.NEXUS3_PW }}
+          staging-repo-docker: ${{ vars.STAGING_REPO_DOCKER }}
+          npm-path: ${{ inputs.npm_path }}
+          cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+
+  # Separate job: dtrack.inventage.com is only reachable from the internal network,
+  # so the upload must run on a self-hosted runner (the SBOM generation itself runs
+  # on cheaper GitHub-hosted runners). Repositories that cannot use a self-hosted runner
+  # (e.g. public repositories) opt out with upload_to_dependency_track: false.
+  dtrack:
+    name: Dependency-Track Upload
+    # sbom_generated is false for repos that produce neither Docker images nor have a
+    # frontend — there is nothing to upload then
+    if: ${{ inputs.upload_to_dependency_track && needs.sbom.outputs.should_run == 'true' && needs.sbom.outputs.sbom_generated == 'true' }}
+    needs: [sbom]
+    runs-on: macduff
+    steps:
+      - name: Download SBOM Artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sbom.cyclonedx.json
+
+      - name: Upload SBOM to Dependency-Track
+        uses: uniport/workflows/.github/actions/base/upload-sbom-dependency-track@main
+        with:
+          version: ${{ inputs.version }}
+          api-key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          url: ${{ vars.DEPENDENCY_TRACK_URL || 'https://dtrack.inventage.com' }}
+          parent-uuid: ${{ vars.DEPENDENCY_TRACK_PARENT_UUID }}
+          # Only builds of the default branch mark their DT version as "latest"
+          is-latest: ${{ github.ref_name == github.event.repository.default_branch }}
