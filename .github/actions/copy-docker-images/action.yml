@@ -18,11 +18,37 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Copy multi-arch docker image
+    - name: Copy multi-arch docker image and attestations
       shell: bash
+      env:
+        SRC: ${{ inputs.source_image }}
+        DST: ${{ inputs.destination_image }}
+        SRC_CREDS: ${{ inputs.source_credentials }}
+        DST_CREDS: ${{ inputs.destination_credentials }}
       run: |
-        docker run --rm quay.io/skopeo/stable:v1 copy \
-          --all \
-          --src-creds ${{ inputs.source_credentials }} \
-          --dest-creds ${{ inputs.destination_credentials }} \
-          docker://${{ inputs.source_image }} docker://${{ inputs.destination_image }}
+        set -euo pipefail
+        skopeo() { docker run --rm quay.io/skopeo/stable:v1 "$@"; }
+
+        skopeo copy --all \
+          --src-creds "$SRC_CREDS" --dest-creds "$DST_CREDS" \
+          "docker://$SRC" "docker://$DST"
+
+        # Cosign stores SBOM/provenance attestations and signatures as sibling tags of the
+        # image (sha256-<digest>.att / .sig). Carry them along so the mirrored image stays
+        # verifiable. Images without attestations are copied as before.
+        DIGEST="$(skopeo inspect --format '{{.Digest}}' --creds "$SRC_CREDS" "docker://$SRC")"
+        for suffix in att sig; do
+          ATTACHMENT_TAG="${DIGEST/:/-}.${suffix}"
+          ATTACHMENT_SRC="${SRC%:*}:${ATTACHMENT_TAG}"
+          ATTACHMENT_DST="${DST%:*}:${ATTACHMENT_TAG}"
+
+          if ! skopeo inspect --raw --creds "$SRC_CREDS" "docker://$ATTACHMENT_SRC" >/dev/null 2>&1; then
+            echo "No ${suffix} attachment for ${SRC}, skipping"
+            continue
+          fi
+
+          echo "Copying ${suffix} attachment ${ATTACHMENT_SRC} to ${ATTACHMENT_DST}…"
+          skopeo copy \
+            --src-creds "$SRC_CREDS" --dest-creds "$DST_CREDS" \
+            "docker://$ATTACHMENT_SRC" "docker://$ATTACHMENT_DST"
+        done

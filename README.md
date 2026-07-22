@@ -60,6 +60,28 @@ The [shared build pipeline](./.github/workflows/shared-build-pipeline.yml) gener
 
 - **Dependency-Track**: the SBOM is uploaded to [dtrack.inventage.com](https://dtrack.inventage.com) under the project named after the repository, with the semver prefix of the build version as project version. Each build of a release line replaces the BOM, so the Dependency-Track project always reflects the current release candidate; releases need no additional upload. The upload runs on a self-hosted runner because Dependency-Track is only reachable from the internal network.
 
+These steps live in the standalone reusable workflow [`shared-sbom.yml`](./.github/workflows/shared-sbom.yml). The shared build pipeline calls it automatically. A pipeline that does **not** use the shared build pipeline can reuse the exact same steps by calling `shared-sbom.yml` with the build version once its Docker images are pushed to the staging registry (see `uniport-gateway` for an example):
+
+```yaml
+jobs:
+  build:
+    # ... your build that pushes the Docker images ...
+    outputs:
+      VERSION: ${{ jobs.build.outputs.VERSION }}
+  sbom:
+    needs: [build]
+    uses: uniport/workflows/.github/workflows/shared-sbom.yml@main
+    with:
+      version: ${{ needs.build.outputs.VERSION }}
+    secrets:
+      NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
+      COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+      COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+      DEPENDENCY_TRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+```
+
+Public repositories, which cannot use the self-hosted internal-network runner the Dependency-Track upload needs, additionally set `upload_to_dependency_track: false` (SBOM generation and attestation still run; only the upload is skipped).
+
 Required configuration (attestation and upload are skipped with a notice when the secrets are absent):
 
 | Kind     | Name                           | Purpose                                                   |
