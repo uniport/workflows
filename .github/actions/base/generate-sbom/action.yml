@@ -136,8 +136,22 @@ runs:
           arm64 | aarch64) ARCH=arm64 ;;
           *) ARCH=x64 ;;
         esac
+        # Checksums as recorded by GitHub for the v0.32.0 release assets (shown on the
+        # release page per asset and in the releases API as `digest`); update when bumping
+        # the version.
+        case "${OS}-${ARCH}" in
+          linux-x64) SHA256=454879e6a4a405c8a13bff49b8982adcb0596f3019b26b0811c66e4d7f0783e1 ;;
+          linux-arm64) SHA256=abf0b7c5648a5b127791d691cad41f004aceea27c75bb42c9572fdc9694770cf ;;
+          osx-arm64) SHA256=83be8a9599f1dce1252208bd4d0bb15308eca0546814fb72b48b7246d35e832e ;;
+          *)
+            echo "::error::No cyclonedx-cli checksum pinned for ${OS}-${ARCH}"
+            exit 1
+            ;;
+        esac
         curl -fsSL "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.32.0/cyclonedx-${OS}-${ARCH}" \
-          -o /tmp/cyclonedx-cli && chmod +x /tmp/cyclonedx-cli
+          -o /tmp/cyclonedx-cli
+        echo "${SHA256}  /tmp/cyclonedx-cli" | shasum -a 256 -c -
+        chmod +x /tmp/cyclonedx-cli
         # Invariant globalization: cyclonedx-cli is a .NET binary and would otherwise
         # require libicu on the runner
         export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1

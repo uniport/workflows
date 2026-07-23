@@ -35,4 +35,4 @@ runs:
           -e NEXUS_PW="${{ inputs.nexus3_password }}" \
           -e DOCKER_STAGING_REGISTRY="${{ inputs.source_registry }}" \
           -e DOCKER_RELEASE_REGISTRY="${{ inputs.target_registry }}" \
-          peschee/zx:2.0.0 /tmp/release-nexus-tag.mjs "${{ inputs.tag }}" --quiet
+          peschee/zx:2.0.0@sha256:a4fd1217e808341d276d8166438a0bd3de2e2ad96b077243d2c7d5f17f0b584c /tmp/release-nexus-tag.mjs "${{ inputs.tag }}" --quiet

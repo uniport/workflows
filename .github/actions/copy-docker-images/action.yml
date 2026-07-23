@@ -27,7 +27,10 @@ runs:
         DST_CREDS: ${{ inputs.destination_credentials }}
       run: |
         set -euo pipefail
-        skopeo() { docker run --rm quay.io/skopeo/stable:v1 "$@"; }
+        # Pinned by digest since this runs with registry credentials; the tag documents the
+        # release the digest belongs to. Bump both together
+        # (docker buildx imagetools inspect quay.io/skopeo/stable:<tag>).
+        skopeo() { docker run --rm quay.io/skopeo/stable:v1.22.2@sha256:c7d3c512612f52805023cd38351081dad7e2729fc13d14b701e47c7c8bdd6615 "$@"; }
 
         skopeo copy --all \
           --src-creds "$SRC_CREDS" --dest-creds "$DST_CREDS" \
