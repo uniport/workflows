@@ -80,7 +80,7 @@ jobs:
       DEPENDENCY_TRACK_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
 ```
 
-Public repositories, which cannot use the self-hosted internal-network runner the Dependency-Track upload needs, additionally set `upload_to_dependency_track: false` (SBOM generation and attestation still run; only the upload is skipped).
+The Dependency-Track upload needs a self-hosted runner on the internal network; the runner label is configurable via `dtrack_runner` (default: `macduff`). Public repositories point it at a runner group that allows public repositories (e.g. `inventage-ephemeral-linux-amd64`, ideally restricted to this workflow in the runner group settings), or set `upload_to_dependency_track: false` to skip the upload (SBOM generation and attestation still run). The upload job never runs in PR context, so fork code cannot reach the self-hosted runner through this workflow.
 
 Required configuration (attestation and upload are skipped with a notice when the secrets are absent):
 
