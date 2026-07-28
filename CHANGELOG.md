@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extracted the SBOM generation, attestation and Dependency-Track upload from `shared-build-pipeline.yml` into a standalone reusable workflow `shared-sbom.yml`. The shared build pipeline now calls it (no behaviour change); pipelines that do not use the shared build pipeline (e.g. `uniport-gateway`) can reuse the exact same supply-chain steps by calling `shared-sbom.yml` with the build version. The Dependency-Track upload can be disabled with `upload_to_dependency_track: false` for repositories that cannot use a self-hosted internal-network runner (e.g. public repositories); SBOM generation and attestation still run
 - `shared-sbom.yml` accepts a `dtrack_runner` input (default: `macduff`) selecting the self-hosted runner label for the Dependency-Track upload job, so public repositories (e.g. `uniport-gateway`) can run the upload on a runner group that allows public repositories (e.g. `inventage-ephemeral-linux-amd64`) instead of skipping it. The upload job never runs in PR context (branch gate), so fork code cannot reach the self-hosted runner through this workflow
 
+### Changed
+
+- `generate-sbom` now scans the built Docker images with syft concurrently (4 at a time) instead of sequentially. The scans are network-bound at roughly 30 seconds per image, so on multi-image builds this cuts several minutes off the SBOM job, which sits on the critical path of the shared pipeline (measured on `notification` with 12 images: scan block down from ~6 minutes). Per-scan output is written to log files and emitted as collapsible log groups, and a failing scan still fails the step and names the affected image
+
 ### Security
 
 - Pinned the container images run by composite actions by digest, since their tags are mutable and both actions run with registry credentials: `quay.io/skopeo/stable:v1.22.2` in `copy-docker-images` and `peschee/zx:2.0.0` in `release-docker-images`
