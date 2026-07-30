@@ -33,5 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `copy-docker-images` now also copies the cosign attestation and signature tags (`sha256-<digest>.att`/`.sig`) alongside the image, so images mirrored to another registry (e.g. the public GitHub Container Registry) stay verifiable with `cosign verify-attestation`
 - `shared-maven-build.yml` now checks out the PR head under `pull_request_target` so Dependabot PR builds verify the proposed changes instead of the base branch
 - `publish-spotbugs-report` and `publish-checkstyle-report` now publish the report before failing on violations, and no longer add a confusing secondary failure when the analysis cannot run because an earlier build step failed (e.g. unresolvable dependencies) ([GH-50](https://github.com/uniport/workflows/pull/50))
+- Dependabot now also checks the actions pinned in our composite actions under `.github/actions/`, which `directory: '/'` never covered ([dependabot-core#6345](https://github.com/dependabot/dependabot-core/issues/6345))
 
 [unreleased]: https://github.com/uniport/workflows/compare/73134d30c856eaabc9c891492f265b896517382c...main
