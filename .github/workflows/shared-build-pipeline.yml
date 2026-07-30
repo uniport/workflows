@@ -84,7 +84,7 @@ on:
         type: boolean
         default: true
       sbom_npm_path:
-        description: 'Path to the npm project included in the SBOM (only used when has_frontend is true)'
+        description: 'Path to the npm project included in the SBOM. Skipped when the path does not exist; set to an empty string to opt out.'
         required: false
         type: string
         default: 'frontend/src/main/web'
@@ -201,7 +201,7 @@ jobs:
     uses: ./.github/workflows/shared-sbom.yml
     with:
       version: ${{ needs.maven.outputs.VERSION }}
-      npm_path: ${{ inputs.has_frontend && inputs.sbom_npm_path || '' }}
+      npm_path: ${{ inputs.sbom_npm_path }}
       sbom_ref_pattern: ${{ inputs.sbom_ref_pattern }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}

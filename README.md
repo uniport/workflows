@@ -50,7 +50,7 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 
 The [shared build pipeline](./.github/workflows/shared-build-pipeline.yml) generates a CycloneDX SBOM for every build of the default branch and of `X.Y.x` maintenance branches (configurable via the `sbom_ref_pattern` input, opt out with `generate_sbom: false`):
 
-- **SBOM**: npm frontend sources (production dependencies) plus a syft scan of every Docker image the build pushed, merged into a single `sbom.cyclonedx.json` run artifact.
+- **SBOM**: npm frontend sources (production dependencies) plus a syft scan of every Docker image the build pushed, merged into a single `sbom.cyclonedx.json` run artifact. The npm project comes from `sbom_npm_path` (default `frontend/src/main/web`), skipped when that path does not exist. Point it elsewhere for a frontend outside the default path, or set it to an empty string to opt out.
 - **Attestation**: the SBOM and a SLSA provenance predicate are attached to each image (by digest) with [cosign](https://github.com/sigstore/cosign), signed with the Uniport key pair. The public key is [cosign.pub](./cosign.pub). Verify with:
 
   ```sh

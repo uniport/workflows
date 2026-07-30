@@ -29,7 +29,7 @@ on:
         required: true
         type: string
       npm_path:
-        description: 'Path to an npm project to include in the SBOM (empty = no npm SBOM)'
+        description: 'Path to an npm project to include in the SBOM (empty or non-existent = no npm SBOM)'
         required: false
         type: string
         default: ''

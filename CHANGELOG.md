@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `generate-sbom` now scans the built Docker images with syft concurrently (4 at a time) instead of sequentially. The scans are network-bound at roughly 30 seconds per image, so on multi-image builds this cuts several minutes off the SBOM job, which sits on the critical path of the shared pipeline (measured on `notification` with 12 images: scan block down from ~6 minutes). Per-scan output is written to log files and emitted as collapsible log groups, and a failing scan still fails the step and names the affected image
+- The npm part of the SBOM is now generated whenever `sbom_npm_path` (default `frontend/src/main/web`) exists, and skipped with a notice when it does not. `conversation`, `dashboard` and `notification` gain their npm dependency tree in the SBOM; repositories without an npm project need no configuration. Set `sbom_npm_path: ''` to opt out
 
 ### Security
 

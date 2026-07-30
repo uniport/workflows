@@ -36,7 +36,7 @@ inputs:
     description: Nexus repository ID of the Docker staging repository to search for images
     required: true
   npm-path:
-    description: Path to the npm project directory to include in the SBOM (empty = no npm SBOM)
+    description: Path to the npm project directory to include in the SBOM (empty or non-existent = no npm SBOM)
     required: false
     default: ''
   cosign-private-key:
@@ -83,6 +83,16 @@ runs:
         NPM_PATH: ${{ inputs.npm-path }}
         VERSION: ${{ inputs.version }}
       run: |
+        # Callers forward the path unconditionally, so a missing one means "no npm project here".
+        if [ ! -d "$NPM_PATH" ]; then
+          echo "::notice::No npm project at '${NPM_PATH}', skipping the npm SBOM."
+          exit 0
+        fi
+        if [ ! -f "${NPM_PATH}/package.json" ]; then
+          echo "::warning::'${NPM_PATH}' has no package.json, skipping the npm SBOM."
+          exit 0
+        fi
+
         "$SYFT" scan "dir:${NPM_PATH}" \
           --source-name "${GITHUB_REPOSITORY#*/}-npm" --source-version "$VERSION" \
           -o cyclonedx-json@1.6=sbom-npm.cyclonedx.json
