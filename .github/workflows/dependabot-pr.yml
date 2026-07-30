@@ -15,6 +15,12 @@ name: Dependabot PR Checks
 #     full commit SHA. Local (`./`) and first-party (`uniport/`) refs that track
 #     `@main` by design are exempt.
 #   - For npm updates, install and run the Prettier tooling check.
+#
+# The checks are gated on the `dependabot/**` branch, not on the actor, so a human
+# pushing a fix onto a Dependabot branch still gets them. Only `metadata` stays
+# actor-gated: fetch-metadata reads the trailers of the bot's own commit and fails
+# once a human commit sits on top. Nothing depends on it, so it skipping is
+# harmless, and the npm job decides for itself whether npm files changed.
 
 on:
   pull_request:
@@ -29,6 +35,8 @@ jobs:
   metadata:
     name: Classify update
     runs-on: ubuntu-latest
+    # Informational only. Actor-gated because fetch-metadata cannot read a branch
+    # whose HEAD is a human commit; no other job depends on this one.
     if: github.actor == 'dependabot[bot]'
     outputs:
       ecosystem: ${{ steps.meta.outputs.package-ecosystem }}
@@ -56,8 +64,8 @@ jobs:
 
   workflow-checks:
     name: Workflow lint & pin check
-    needs: metadata
     runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'dependabot/')
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -110,18 +118,37 @@ jobs:
 
   npm-checks:
     name: npm tooling lint
-    needs: metadata
-    if: contains(needs.metadata.outputs.ecosystem, 'npm')
     runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'dependabot/')
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Decided from the diff rather than from fetch-metadata, so this still works
+      # when a human commit sits on top of the bot's.
+      - name: Does this PR touch npm files?
+        id: touched
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh pr diff "$PR" --name-only | grep -qE '(^|/)(package\.json|package-lock\.json)$'; then
+            echo 'touched=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'touched=false' >> "$GITHUB_OUTPUT"
+            echo 'No npm manifest changes in this PR, skipping the tooling lint.'
+          fi
       - name: Setup Node
+        if: steps.touched.outputs.touched == 'true'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
       - name: Install dependencies
+        if: steps.touched.outputs.touched == 'true'
         run: npm ci
       - name: Prettier check
+        if: steps.touched.outputs.touched == 'true'
         run: npm run lint:prettier

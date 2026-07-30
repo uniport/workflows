@@ -1,3 +1,12 @@
+# Dependabot Configuration
+#
+# Groups collapse the weekly bumps into one PR per ecosystem. Group names are the
+# vocabulary of the 'merge_policy' input of shared-dependabot-automerge.yml, but this
+# repository deliberately has NO automerge job: every other repository consumes these
+# workflows at '@main', so a merge here goes live fleet-wide immediately, and
+# dependabot-pr.yml only runs actionlint, a SHA-pin check and prettier - it never
+# executes the shared workflows an action bump would affect. Bumps here are merged by
+# a human.
 version: 2
 updates:
   - package-ecosystem: 'npm'
@@ -7,6 +16,12 @@ updates:
     #    allow:
     #      - dependency-type: "production"
     open-pull-requests-limit: 10
+    # Give a release time to be yanked before it reaches the whole fleet
+    cooldown:
+      default-days: 30
+    groups:
+      build-tooling:
+        dependency-type: 'development'
   # `directory: '/'` covers only `.github/workflows/` and a root `action.yml`, never composite
   # actions (https://github.com/dependabot/dependabot-core/issues/6345). The globs add both
   # nesting levels in use here.
@@ -17,3 +32,8 @@ updates:
       - '/.github/actions/*/*'
     schedule:
       interval: 'weekly'
+    cooldown:
+      default-days: 30
+    groups:
+      actions:
+        patterns: ['*']
