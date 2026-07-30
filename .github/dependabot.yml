@@ -7,7 +7,13 @@ updates:
     #    allow:
     #      - dependency-type: "production"
     open-pull-requests-limit: 10
+  # `directory: '/'` covers only `.github/workflows/` and a root `action.yml`, never composite
+  # actions (https://github.com/dependabot/dependabot-core/issues/6345). The globs add both
+  # nesting levels in use here.
   - package-ecosystem: 'github-actions'
-    directory: '/'
+    directories:
+      - '/'
+      - '/.github/actions/*'
+      - '/.github/actions/*/*'
     schedule:
       interval: 'weekly'
