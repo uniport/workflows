@@ -13,6 +13,9 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+      day: 'monday'
+      time: '23:00'
+      timezone: 'Europe/Zurich'
     #    allow:
     #      - dependency-type: "production"
     open-pull-requests-limit: 10
@@ -32,6 +35,9 @@ updates:
       - '/.github/actions/*/*'
     schedule:
       interval: 'weekly'
+      day: 'monday'
+      time: '23:00'
+      timezone: 'Europe/Zurich'
     cooldown:
       default-days: 30
     groups:
