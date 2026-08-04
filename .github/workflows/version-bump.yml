@@ -76,6 +76,11 @@ jobs:
           fetch-depth: 1 # Fetch only the latest commit
           ref: ${{ inputs.branch_name }}
 
+      - name: Setup Java
+        # Restores the ~/.m2 cache so `versions:set` doesn't re-download the
+        # versions-maven-plugin (and its transitive deps) on every bump.
+        uses: uniport/workflows/.github/actions/base/setup-java@main
+
       - name: Configure Git user
         run: |
           git config user.name "${{ github.actor }}"
