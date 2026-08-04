@@ -62,6 +62,19 @@ for (const c of components) {
   // Cosign stores SBOM/provenance attestations and signatures as sibling tags of the image
   // (sha256-<digest>.att / .sig). Carry them along so released images stay verifiable after
   // the staging repository gets cleaned up. Images without attestations are copied as before.
+  //
+  // Non-image artifacts (e.g. Helm charts, whose config media type is
+  // application/vnd.cncf.helm.config.v1+json) are never cosign-signed here and don't support the
+  // image-specific `skopeo inspect` used below, so skip attestation handling for them. The
+  // `skopeo copy -a` above has already moved the artifact itself.
+  const rawManifest = JSON.parse((await $`skopeo inspect --raw --creds ${NEXUS_USER}:${NEXUS_PW} docker://${source}`).stdout);
+  const configMediaType = rawManifest?.config?.mediaType;
+  const imageConfigMediaTypes = ['application/vnd.oci.image.config.v1+json', 'application/vnd.docker.container.image.v1+json'];
+  if (configMediaType && !imageConfigMediaTypes.includes(configMediaType)) {
+    console.info(`Skipping attestation copy for non-image artifact ${chalk.bold(source)} (config media type ${configMediaType})`);
+    continue;
+  }
+
   const digest = (await $`skopeo inspect --format {{.Digest}} --creds ${NEXUS_USER}:${NEXUS_PW} docker://${source}`).stdout.trim();
   for (const suffix of ['att', 'sig']) {
     const attachmentTag = `${digest.replace(':', '-')}.${suffix}`;
