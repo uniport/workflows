@@ -54,7 +54,7 @@ on:
 jobs:
   automerge:
     name: Auto-Merge
-    runs-on: macduff
+    runs-on: ubuntu-latest
     if: ${{ github.actor == 'dependabot[bot]' }} # Ensure this only runs for bot-initiated PRs
     steps:
       - name: Fetch Dependabot metadata
