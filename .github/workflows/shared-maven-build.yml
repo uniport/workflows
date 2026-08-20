@@ -164,6 +164,19 @@ jobs:
         run: |
           find ~/.m2/repository -name "maven-metadata-local.xml" -delete 2>/dev/null || true
 
+      # avro-maven-plugin writes a generated file only when the schema is newer:
+      # SpecificCompiler.OutputFile.writeToDestination returns early when the target
+      # exists and its mtime is >= the schema's. Repositories that commit generated
+      # Avro sources into src/main/java therefore only reveal plugin-version drift on
+      # a workspace whose checkout happened to write the schemas last, and a reused
+      # workspace keeps those mtimes across builds. A plugin bump can therefore pass
+      # "Verify Clean Workspace" in its own build and break the default branch
+      # afterwards. Touching the schemas makes regeneration unconditional, so the
+      # check is deterministic. No-op where there are no Avro schemas.
+      - name: Refresh Avro Schema Timestamps
+        run: |
+          find . -type d \( -name node_modules -o -name target -o -name .git \) -prune -o -type f \( -name '*.avsc' -o -name '*.avdl' -o -name '*.avpr' \) -exec touch {} +
+
       - name: Execute Maven Deploy (Build, Test, and Push)
         run: |
           mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml ${{ inputs.maven_verbose && '-e -X' || '' }} -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
