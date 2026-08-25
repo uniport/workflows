@@ -1,5 +1,9 @@
 name: 'Setup Helm repositories'
 description: 'Sets up Helm repositories'
+
+# Thin wrapper around base/add-helm-repositories, kept so callers pinned to this path keep working.
+# The implementation lives in base/add-helm-repositories; change it there.
+
 inputs:
   username:
     description: 'The username for accessing Helm repositories'
@@ -27,19 +31,9 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Add Helm repositories
-      shell: bash
-      if: ${{ inputs.repositories != '[]' }}
-      run: |
-        echo '${{ inputs.repositories }}' | jq -c '.[]' | while IFS= read -r repo_json; do
-          repo_name=$(echo "$repo_json" | jq -r .name)
-          repo_url=$(echo "$repo_json" | jq -r .url)
-
-          # Build the helm command with conditional --force-update flag
-          helm_cmd="helm repo add \"$repo_name\" \"$repo_url\" --username \"${{ inputs.username }}\" --password \"${{ inputs.password }}\""
-          if [[ "${{ inputs.force-update }}" == "true" ]]; then
-            helm_cmd="$helm_cmd --force-update"
-          fi
-
-          eval "$helm_cmd"
-        done
+    - uses: uniport/workflows/.github/actions/base/add-helm-repositories@main
+      with:
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+        force-update: ${{ inputs.force-update }}
+        repositories: ${{ inputs.repositories }}

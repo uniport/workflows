@@ -12,11 +12,13 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 > [!TIP]
 > Composite actions available in this repository.
 
+The actions under [`.github/actions/base`](./.github/actions/base) hold the implementations. The actions listed below are thin wrappers over them, kept so
+existing callers keep working; new callers should use the `base` action directly.
+
 - [Abort if there is uncommitted code](./.github/actions/ensure-no-uncommitted-code)
 - [Add Helm repositories](./.github/actions/add-helm-repositories)
 - [Disable man-db triggers](./.github/actions/disable-man-db-triggers)
 - [Ensures a branch exists and aborts otherwise](./.github/actions/ensure-branch)
-- [Parses the package version](./.github/actions/parse-version)
 - [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
 - [Setup Java](./.github/actions/setup-java)
 - [Setup Maven Build Variables](./.github/actions/setup-maven-build-variables)
@@ -41,9 +43,8 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 - [Nexus Artifacts Move](./.github/workflows/move-nexus-artifacts.yml)
 - [Nexus Tag Associate](./.github/workflows/nexus-tag-associate.yml)
 - [Nexus Tag Create](./.github/workflows/nexus-tag-create.yml)
-- [Nexus Tag Search](./.github/workflows/nexus-tag-search.yml)
 - [Setup Maven Build Variables](./.github/workflows/setup-maven-build-variables.yml)
-- [Tag Nexus Artifacts](./.github/workflows/nexus-tag-search.yml)
+- [Tag Nexus Artifacts](./.github/workflows/tag-nexus-artifacts.yml)
 - [Version Bump](./.github/workflows/version-bump.yml)
 
 ## SBOM, Attestation & Dependency-Track

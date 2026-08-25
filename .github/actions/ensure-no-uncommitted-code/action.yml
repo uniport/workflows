@@ -1,9 +1,13 @@
 name: Check uncommitted code
 description: Checks if there is uncommitted code in the working directory
 
+# Thin wrapper around base/ensure-no-uncommitted-code, kept so callers pinned to this path keep working.
+# The exclusion list is pinned to the one this action used before it delegated, so its behaviour is
+# unchanged: base/ additionally ignores package.json and package-lock.json.
+
 runs:
   using: composite
   steps:
-    - name: Check uncommitted code
-      shell: bash
-      run: ${{ github.action_path }}/check_clean_working_directory.sh
+    - uses: uniport/workflows/.github/actions/base/ensure-no-uncommitted-code@main
+      with:
+        excluded-patterns: '.*pom\.xml$:.*\.npmrc$'

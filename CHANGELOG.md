@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `generate-sbom` now scans the built Docker images with syft concurrently (4 at a time) instead of sequentially. The scans are network-bound at roughly 30 seconds per image, so on multi-image builds this cuts several minutes off the SBOM job, which sits on the critical path of the shared pipeline (measured on `notification` with 12 images: scan block down from ~6 minutes). Per-scan output is written to log files and emitted as collapsible log groups, and a failing scan still fails the step and names the affected image
 - The npm part of the SBOM is now generated whenever `sbom_npm_path` (default `frontend/src/main/web`) exists, and skipped with a notice when it does not. `conversation`, `dashboard` and `notification` gain their npm dependency tree in the SBOM; repositories without an npm project need no configuration. Set `sbom_npm_path: ''` to opt out
 - Grouped this repository's own Dependabot updates (one PR per ecosystem instead of one per action reference) and added a 30 day cooldown, since every repository consumes these workflows at `@main` and anything merged here is live fleet-wide immediately. The Dependabot PR checks are now gated on the `dependabot/**` branch rather than the actor, so a human commit pushed onto a Dependabot branch no longer skips actionlint, the SHA-pin check and prettier; the npm check decides from the diff whether npm manifests changed. Auto-merge is deliberately not enabled here ([GH-73](https://github.com/uniport/workflows/pull/73))
+- The composite actions in `.github/actions/` are now thin wrappers over their `.github/actions/base/` counterparts instead of byte-identical copies, so a fix no longer has to be applied twice. Behaviour is unchanged for existing callers; `base/ensure-no-uncommitted-code` gains an `excluded-patterns` input so the wrapper can keep its narrower exclusion list. The workflows in this repository now call the `base` actions directly, so a wrapper only exists where a consumer still needs one
+
+### Removed
+
+- Removed `main-maven-build.yml`, `nexus-tag.yml`, `nexus-tag-search.yml` and the `install-mvnd` and `parse-version` actions. No repository in the organisation referenced them, on a default or a maintenance branch
 
 ### Security
 
@@ -30,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `shared-maven-build.yml` and `main-maven-build.yml` now export `HELM_REGISTRY_CONFIG` from the Maven step with `$HOME` expanded. As an `env:` value the tilde reached helm unexpanded, so OCI chart credentials came from the macOS keychain instead of the entries `docker/login-action` writes
+- `shared-maven-build.yml` now exports `HELM_REGISTRY_CONFIG` from the Maven step with `$HOME` expanded. As an `env:` value the tilde reached helm unexpanded, so OCI chart credentials came from the macOS keychain instead of the entries `docker/login-action` writes
 - `shared-maven-build.yml` now touches Avro schemas before the build, so `avro-maven-plugin` always regenerates and the clean-workspace check catches drift in committed generated sources every run instead of only on a freshly cloned workspace
 - `release-docker-images` now also copies cosign attestation and signature tags (`sha256-<digest>.att`/`.sig`) when promoting Docker images from staging to release, so released images stay verifiable after staging cleanup; image copies now run sequentially and properly fail the job on errors
 - `copy-docker-images` now also copies the cosign attestation and signature tags (`sha256-<digest>.att`/`.sig`) alongside the image, so images mirrored to another registry (e.g. the public GitHub Container Registry) stay verifiable with `cosign verify-attestation`
