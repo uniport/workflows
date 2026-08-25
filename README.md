@@ -12,11 +12,13 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 > [!TIP]
 > Composite actions available in this repository.
 
+The actions under [`.github/actions/base`](./.github/actions/base) hold the implementations. The actions listed below are thin wrappers over them, kept so
+existing callers keep working; new callers should use the `base` action directly.
+
 - [Abort if there is uncommitted code](./.github/actions/ensure-no-uncommitted-code)
 - [Add Helm repositories](./.github/actions/add-helm-repositories)
 - [Disable man-db triggers](./.github/actions/disable-man-db-triggers)
 - [Ensures a branch exists and aborts otherwise](./.github/actions/ensure-branch)
-- [Parses the package version](./.github/actions/parse-version)
 - [Send Rocket.Chat message](./.github/actions/send-rocket-chat-message)
 - [Setup Java](./.github/actions/setup-java)
 - [Setup Maven Build Variables](./.github/actions/setup-maven-build-variables)

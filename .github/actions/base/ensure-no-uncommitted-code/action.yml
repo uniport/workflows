@@ -1,9 +1,17 @@
 name: Check uncommitted code
 description: Checks if there is uncommitted code in the working directory
 
+inputs:
+  excluded-patterns:
+    description: 'Colon separated list of regular expressions matching files to ignore. Falls back to the EXCLUDED_PATTERNS environment variable, then to the built-in list.'
+    required: false
+    default: ''
+
 runs:
   using: composite
   steps:
     - name: Check uncommitted code
       shell: bash
+      env:
+        EXCLUDED_PATTERNS: ${{ inputs.excluded-patterns || env.EXCLUDED_PATTERNS }}
       run: ${{ github.action_path }}/check_clean_working_directory.sh

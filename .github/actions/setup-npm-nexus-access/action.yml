@@ -1,6 +1,9 @@
 name: 'Setup NPM Nexus Access'
 description: 'Sets an access token for a NPM repository on Nexus'
 
+# Thin wrapper around base/setup-npm-nexus-access, kept so callers pinned to this path keep working.
+# The implementation lives in base/setup-npm-nexus-access; change it there.
+
 inputs:
   token:
     description: 'The NPM token to setup'
@@ -18,14 +21,9 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Add Nexus NPM credentials
-      shell: bash
-      run: |
-        cat << EOF >> '${{ inputs.auth-file }}'
-        //$NEXUS_URL/repository/$NPM_REPOSITORY/:_authToken=$NPM_TOKEN
-        EOF
-        cat '${{ inputs.auth-file }}'
-      env:
-        NPM_TOKEN: ${{ inputs.token }}
-        NPM_REPOSITORY: ${{ inputs.repository }}
-        NEXUS_URL: ${{ inputs.nexus-url }}
+    - uses: uniport/workflows/.github/actions/base/setup-npm-nexus-access@main
+      with:
+        token: ${{ inputs.token }}
+        repository: ${{ inputs.repository }}
+        nexus-url: ${{ inputs.nexus-url }}
+        auth-file: ${{ inputs.auth-file }}
