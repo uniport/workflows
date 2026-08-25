@@ -55,7 +55,6 @@ jobs:
     env:
       CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
       CI_AUTH_PSW: ${{ secrets.NEXUS3_PW }}
-      HELM_REGISTRY_CONFIG: '~/.docker/config.json'
     outputs:
       VERSION: ${{ steps.vars.outputs.RC_VERSION }}
       GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
@@ -132,8 +131,12 @@ jobs:
         run: |
           cp -Rpf ~/.docker ${{ env.DOCKER_CONFIG_DIRECTORY }}
 
+      # Exported here rather than in an env: block. A workflow env value reaches helm
+      # with the tilde unexpanded, so helm cannot open the file and falls back to the
+      # macOS keychain instead of the auth entries docker/login-action writes.
       - name: Build & deploy with Maven
         run: |
+          export HELM_REGISTRY_CONFIG="$HOME/.docker/config.json"
           mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
