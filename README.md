@@ -41,9 +41,8 @@ A collection of reusable workflows and composite actions to avoid duplicating th
 - [Nexus Artifacts Move](./.github/workflows/move-nexus-artifacts.yml)
 - [Nexus Tag Associate](./.github/workflows/nexus-tag-associate.yml)
 - [Nexus Tag Create](./.github/workflows/nexus-tag-create.yml)
-- [Nexus Tag Search](./.github/workflows/nexus-tag-search.yml)
 - [Setup Maven Build Variables](./.github/workflows/setup-maven-build-variables.yml)
-- [Tag Nexus Artifacts](./.github/workflows/nexus-tag-search.yml)
+- [Tag Nexus Artifacts](./.github/workflows/tag-nexus-artifacts.yml)
 - [Version Bump](./.github/workflows/version-bump.yml)
 
 ## SBOM, Attestation & Dependency-Track
