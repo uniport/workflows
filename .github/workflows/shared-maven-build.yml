@@ -44,6 +44,11 @@ on:
         required: false
         type: number
         default: 60
+      multi_arch_build:
+        description: 'Build and push linux/amd64 and linux/arm64 images. Off builds the runner platform alone.'
+        required: false
+        type: boolean
+        default: true
     secrets:
       NEXUS3_PW:
         required: true # Required for 'mvn deploy'
@@ -179,10 +184,13 @@ jobs:
       # Exported here rather than in an env: block. A workflow env value reaches helm
       # with the tilde unexpanded, so helm cannot open the file and falls back to the
       # macOS keychain instead of the auth entries docker/login-action writes.
+      #
+      # Off omits multiArchBuild: the profile in the component poms activates on the property
+      # being defined, not on its value.
       - name: Execute Maven Deploy (Build, Test, and Push)
         run: |
           export HELM_REGISTRY_CONFIG="$HOME/.docker/config.json"
-          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml ${{ inputs.maven_verbose && '-e -X' || '' }} -DmultiArchBuild=true deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
+          mvn -B -V --no-transfer-progress --update-snapshots --settings .github/settings.xml ${{ inputs.maven_verbose && '-e -X' || '' }} ${{ inputs.multi_arch_build && '-DmultiArchBuild=true' || '' }} deploy -Ddocker.dockerStateDir=${{ env.DOCKER_CONFIG_DIRECTORY }}
         env:
           PACKAGE_VERSION: ${{ steps.vars.outputs.RC_VERSION }}
 
