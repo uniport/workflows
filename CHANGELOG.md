@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The npm part of the SBOM is now generated whenever `sbom_npm_path` (default `frontend/src/main/web`) exists, and skipped with a notice when it does not. `conversation`, `dashboard` and `notification` gain their npm dependency tree in the SBOM; repositories without an npm project need no configuration. Set `sbom_npm_path: ''` to opt out
 - Grouped this repository's own Dependabot updates (one PR per ecosystem instead of one per action reference) and added a 30 day cooldown, since every repository consumes these workflows at `@main` and anything merged here is live fleet-wide immediately. The Dependabot PR checks are now gated on the `dependabot/**` branch rather than the actor, so a human commit pushed onto a Dependabot branch no longer skips actionlint, the SHA-pin check and prettier; the npm check decides from the diff whether npm manifests changed. Auto-merge is deliberately not enabled here ([GH-73](https://github.com/uniport/workflows/pull/73))
 
+### Fixed
+
+- `shared-maven-build.yml` runs `mvn verify` instead of `mvn deploy` on `dependabot/*` branches. Dependabot PR builds published an RC to Nexus staging in every repository using the shared build pipeline, although the callers are meant to build without publishing ([GH-85](https://github.com/uniport/workflows/issues/85))
+
 ### Security
 
 - Pinned the container images run by composite actions by digest, since their tags are mutable and both actions run with registry credentials: `quay.io/skopeo/stable:v1.22.2` in `copy-docker-images` and `peschee/zx:2.0.0` in `release-docker-images`
