@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `shared-maven-build.yml` runs `mvn install` instead of `mvn deploy` on `dependabot/*` branches. Dependabot PR builds published an RC to Nexus staging in every repository using the shared build pipeline, although the callers are meant to build without publishing ([GH-85](https://github.com/uniport/workflows/issues/85))
+- `shared-maven-build.yml` runs `mvn install` instead of `mvn deploy` on `dependabot/*` branches. Dependabot PR builds published an RC to Nexus staging in every repository using the shared build pipeline, although the callers are meant to build without publishing ([GH-85](https://github.com/uniport/workflows/issues/85)). All other branches keep running `mvn deploy`
 
 ### Security
 
