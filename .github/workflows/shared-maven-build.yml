@@ -39,6 +39,11 @@ on:
         description: 'Java version used for the build'
         required: true
         type: string
+      runner:
+        description: 'Runner label for the Maven build job (self-hosted macduff by default)'
+        required: false
+        type: string
+        default: 'macduff'
       timeout_minutes:
         description: 'Build timeout in minutes'
         required: false
@@ -78,7 +83,7 @@ env:
 jobs:
   maven:
     name: Build & Publish
-    runs-on: macduff # Priority: Dedicated Mac runner for performance/keychain access
+    runs-on: ${{ inputs.runner }} # Default: macduff, dedicated Mac runner for performance/keychain access
     timeout-minutes: ${{ inputs.timeout_minutes }}
     env:
       CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
