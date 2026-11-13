@@ -78,6 +78,11 @@ on:
         default: true # Policy: Keep archetype blueprint in sync with latest master changes
 
       # === Timeout ===
+      runner:
+        description: 'Runner label for the Maven build job (self-hosted macduff by default)'
+        required: false
+        type: string
+        default: 'macduff'
       timeout_minutes:
         description: 'Build timeout in minutes'
         required: false
@@ -168,6 +173,7 @@ jobs:
       needs_npm_access: ${{ inputs.needs_npm_access }}
       npmrc_path: ${{ inputs.npmrc_path }}
       timeout_minutes: ${{ inputs.timeout_minutes }}
+      runner: ${{ inputs.runner }}
       multi_arch_build: ${{ inputs.multi_arch_build }}
     secrets:
       NEXUS3_PW: ${{ secrets.NEXUS3_PW }}
