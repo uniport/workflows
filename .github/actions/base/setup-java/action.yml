@@ -17,6 +17,10 @@ inputs:
     description: 'Maven related setting to point to the directory where the settings.xml file will be written. Default is ~/.m2.'
     required: false
     default: '~/.m2'
+  maven-version:
+    description: 'Maven version to install when the runner has no mvn on its PATH (preinstalled Maven is used as-is)'
+    required: false
+    default: '3.9.16'
   cache-maven:
     description: 'Enable Maven dependency caching'
     required: false
@@ -32,6 +36,29 @@ runs:
         java-version: ${{ inputs.java-version }}
         settings-path: ${{ inputs.settings-path }}
         overwrite-settings: false
+
+    # GitHub-hosted runners and macduff ship Maven; bare self-hosted VMs do not.
+    - name: Install Maven (if missing)
+      shell: bash
+      env:
+        MAVEN_VERSION: ${{ inputs.maven-version }}
+      run: |
+        if command -v mvn >/dev/null 2>&1; then
+          echo "Using preinstalled Maven: $(command -v mvn)"
+          exit 0
+        fi
+        dir="${RUNNER_TOOL_CACHE}/maven/${MAVEN_VERSION}"
+        if [ ! -x "${dir}/bin/mvn" ]; then
+          base="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}"
+          archive="${RUNNER_TEMP}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+          curl -fsSL -o "${archive}" "${base}/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+          echo "$(curl -fsSL "${base}/apache-maven-${MAVEN_VERSION}-bin.tar.gz.sha512")  ${archive}" | sha512sum -c -
+          mkdir -p "${dir}"
+          tar -xzf "${archive}" -C "${dir}" --strip-components=1
+          rm -f "${archive}"
+        fi
+        echo "${dir}/bin" >> "$GITHUB_PATH"
+        echo "Installed Maven ${MAVEN_VERSION} to ${dir}"
 
     - name: Cache Maven dependencies
       if: ${{ inputs.cache-maven == 'true' }}

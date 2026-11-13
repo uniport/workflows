@@ -88,6 +88,8 @@ jobs:
     env:
       CI_AUTH_USR: ${{ vars.NEXUS3_USER }}
       CI_AUTH_PSW: ${{ secrets.NEXUS3_PW }}
+      # Report summary scripts write emoji; runners with a non-UTF-8 locale would fail on them.
+      PYTHONUTF8: '1'
     outputs:
       VERSION: ${{ steps.vars.outputs.RC_VERSION }}
       GROUP_ID: ${{ steps.vars.outputs.GROUP_ID }}
@@ -116,7 +118,7 @@ jobs:
         uses: uniport/workflows/.github/actions/base/disable-man-db-triggers@test/runner-input # TEST: revert to @main before merging
 
       - name: Setup Java Development Kit
-        uses: uniport/workflows/.github/actions/base/setup-java@main
+        uses: uniport/workflows/.github/actions/base/setup-java@test/runner-input # TEST: revert to @main before merging
         with:
           architecture: ${{ contains(runner.name, 'macduff') && 'aarch64' || '' }}
           cache-maven: ${{ !contains(runner.name, 'macduff') }}
