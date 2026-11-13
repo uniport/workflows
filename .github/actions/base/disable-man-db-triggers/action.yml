@@ -6,7 +6,12 @@ runs:
   steps:
     - name: Disable man-db triggers on Linux
       if: runner.os == 'Linux'
+      # Optimization only: self-hosted runners without passwordless sudo skip it.
       run: |
+        if ! sudo -n true 2>/dev/null; then
+          echo "No passwordless sudo on this runner, leaving man-db triggers as they are."
+          exit 0
+        fi
         echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null
         sudo dpkg-reconfigure man-db
       shell: bash
