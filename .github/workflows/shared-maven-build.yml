@@ -113,7 +113,7 @@ jobs:
         id: slug
 
       - name: Disable Background Database Triggers
-        uses: uniport/workflows/.github/actions/base/disable-man-db-triggers@main
+        uses: uniport/workflows/.github/actions/base/disable-man-db-triggers@test/runner-input # TEST: revert to @main before merging
 
       - name: Setup Java Development Kit
         uses: uniport/workflows/.github/actions/base/setup-java@main
