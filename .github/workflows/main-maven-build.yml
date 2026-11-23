@@ -72,7 +72,7 @@ jobs:
         uses: uniport/workflows/.github/actions/base/setup-maven-build-variables@main
 
       - name: Derive branch slug
-        uses: gacts/github-slug@83cd3d95888be8777f0d9c810c1266da1c5c3ef1 # v1
+        uses: gacts/github-slug@c29c0ddd888a1703a6fc06c55a5f6ddd7beae490 # v1
         id: slug
 
       - name: Disable man-db triggers
@@ -97,7 +97,7 @@ jobs:
           password: ${{ env.CI_AUTH_PSW }}
 
       - name: Login to Docker registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: uniportcr.artifacts.inventage.com
           username: ${{ env.CI_AUTH_USR }}
